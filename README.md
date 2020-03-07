@@ -1,2 +1,2 @@
 # sharechat-scraper
-Scrapes images and timestamps from specified Sharechat tags
+Scrapes images/videos and metadata from Sharechat via two methods: API & Beautiful Soup 
