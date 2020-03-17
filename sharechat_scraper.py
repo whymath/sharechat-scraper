@@ -14,8 +14,8 @@ import json
 
 # Parameters for API scraper - update as required
 
-USER_ID = 341972726 # Sharechat user id
-PASSCODE = "dcdb36a4dc99d6a39547" # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
+USER_ID = 348849803 # Sharechat user id
+PASSCODE = "e555de8136fb06944f7f" # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
 
 # Tag specific params from sharechat.com/tag > inspect ... > request payload 
 tag_dict = {
@@ -35,7 +35,7 @@ tag_dict = {
         "tag_body": {
             "bn":"broker3","userId": USER_ID,"passCode": PASSCODE,
                         "client":"web","message":{
-                            "b":238,"allowOffline":True}},
+                            "b":125,"allowOffline":True}},
         "api_url": "https://restapi1.sharechat.com/bucketFeed"}}
 
 d = os.getcwd() # Download destination
@@ -47,7 +47,7 @@ local_timezone = tzlocal.get_localzone()
 t = ["topic/news-hindi-125", "topic/whatsapp-hindi-238", "trending/Hindi"]
 
 # Number of pages to scrape
-n = 10
+n = 5
 
 # Define helper functions
 
@@ -57,9 +57,9 @@ def get_data(tags, pages):
     df = pd.DataFrame(columns = ["link", "timestamp", "lang", 
                                    "media_type", "tag", "thumbnail"])
     print("Scraping data from Sharechat ...")
-    for _ in range(pages):
+    for tag in tags:
         # Scrape data from each tag
-        for tag in tags: 
+        for _ in range(pages):
             url = tag_dict[tag]["api_url"]
             body = tag_dict[tag]["tag_body"]
             headers = {"content-type": "application/json", 
@@ -77,7 +77,7 @@ def get_data(tags, pages):
             tag_data["thumbnail"] = tag_data["link"]
             # Add tag data 
             df = df.append(tag_data)  
-            time.sleep(uniform(5, 10)) # random delay after each request
+            time.sleep(uniform(30, 35)) # random delay after each request
     df["timestamp"] = df["timestamp"].apply(lambda x: datetime.fromtimestamp(int(x), local_timezone).strftime("%d-%m-%Y, %H:%M:%S"))
     df.drop_duplicates(inplace = True)
     return df
