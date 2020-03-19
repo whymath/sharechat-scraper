@@ -18,21 +18,21 @@ USER_ID = 348849803 # Sharechat user id
 PASSCODE = "e555de8136fb06944f7f" # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
 
 # Tag specific params from sharechat.com/tag > inspect ... > request payload 
-tag_dict = {
+bucket_dict = {
     "trending/Hindi": {
-        "tag_body": {
+        "bucket_body": {
             "bn":"broker3","userId": USER_ID,"passCode": PASSCODE,
                         "client":"web","message":{
                             "r":"web", "f": 0, "p":"f"}},
         "api_url" : "https://restapi1.sharechat.com/requestType81"},
     "topic/whatsapp-hindi-238": {
-        "tag_body": {
+        "bucket_body": {
             "bn":"broker3","userId": USER_ID,"passCode": PASSCODE,
                         "client":"web","message":{
                             "b":238,"allowOffline":True}},
         "api_url": "https://restapi1.sharechat.com/bucketFeed"},
     "topic/news-hindi-125": {
-        "tag_body": {
+        "bucket_body": {
             "bn":"broker3","userId": USER_ID,"passCode": PASSCODE,
                         "client":"web","message":{
                             "b":125,"allowOffline":True}},
@@ -43,8 +43,8 @@ d = os.getcwd() # Download destination
 # Set timezone
 local_timezone = tzlocal.get_localzone()
 
-# Tags to scrape
-t = ["topic/news-hindi-125", "topic/whatsapp-hindi-238", "trending/Hindi"]
+# Buckets to scrape
+b = ["topic/news-hindi-125", "topic/whatsapp-hindi-238", "trending/Hindi"]
 
 # Number of pages to scrape
 n = 5
@@ -52,31 +52,31 @@ n = 5
 # Define helper functions
 
 # Scrapes data from specified tags
-def get_data(tags, pages):
+def get_data(buckets, pages):
     # Create empty dataframe to collect scraped data
     df = pd.DataFrame(columns = ["link", "timestamp", "lang", 
                                    "media_type", "tag", "thumbnail"])
     print("Scraping data from Sharechat ...")
-    for tag in tags:
+    for bucket in buckets:
         # Scrape data from each tag
         for _ in range(pages):
-            url = tag_dict[tag]["api_url"]
-            body = tag_dict[tag]["tag_body"]
+            url = bucket_dict[bucket]["api_url"]
+            body = bucket_dict[bucket]["tag_body"]
             headers = {"content-type": "application/json", 
                            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"} 
             response = requests.post(url, json=body, headers=headers)
             response_dict = json.loads(response.text)
             
             link, timestamp, lang, media_type = get_payload_data(response_dict)
-            tag_data = pd.DataFrame(np.column_stack([link, timestamp, lang, media_type]), 
+            bucket_data = pd.DataFrame(np.column_stack([link, timestamp, lang, media_type]), 
                             columns = ["link", "timestamp", "lang", "media_type"])
             
-            # Add tag column 
-            tag_data["tag"] = tag
+            # Add bucket column 
+            bucket_data["bucket"] = bucket
             # Add thumbnail column
-            tag_data["thumbnail"] = tag_data["link"]
-            # Add tag data 
-            df = df.append(tag_data)  
+            bucket_data["thumbnail"] = bucket_data["link"]
+            # Add bucket data 
+            df = df.append(bucket_data)  
             time.sleep(uniform(30, 35)) # random delay after each request
     df["timestamp"] = df["timestamp"].apply(lambda x: datetime.fromtimestamp(int(x), local_timezone).strftime("%d-%m-%Y, %H:%M:%S"))
     df.drop_duplicates(inplace = True)
@@ -112,16 +112,16 @@ def convert_links_to_thumbnails(df):
 
 # Saves data in csv and html formats
 def save_data(df, html):
-    with open("sharechat_data_preview.html", "w") as f:
+    with open("sharechat_bucket_data_preview.html", "w") as f:
         f.write(html.data)
     df.drop("thumbnail", axis = 1, inplace = True)
-    df.to_csv("sharechat_data.csv")
+    df.to_csv("sharechat_bucket_data.csv")
 
 # Build API scraper
-def sharechat_scraper(tags, destination, pages):
+def sharechat_bucket_scraper(buckets, destination, pages):
     start_time = time.time()
-    # Scrape data from each tag
-    sharechat_df = get_data(tags, n)
+    # Scrape data from each bucket
+    sharechat_df = get_data(buckets, n)
     # Generate html file with image thumbnails
     sharechat_data_html = convert_links_to_thumbnails(sharechat_df)
     # Save data 
@@ -132,5 +132,5 @@ def sharechat_scraper(tags, destination, pages):
 
 # Run scraper
 if __name__ == "__main__":
-    sharechat_scraper(t, d, n)
+    sharechat_bucket_scraper(b, d, n)
 
