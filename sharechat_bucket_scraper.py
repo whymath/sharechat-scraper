@@ -12,7 +12,7 @@ from time import sleep
 from random import uniform
 import json
 
-# Parameters for API scraper - update as required
+# Parameters for API bucket scraper - update as required
 
 USER_ID = 348849803 # Sharechat user id
 PASSCODE = "e555de8136fb06944f7f" # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
