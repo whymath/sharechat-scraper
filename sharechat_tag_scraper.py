@@ -18,8 +18,8 @@ import selenium
 from selenium import webdriver
 
 # Parameters for API scraper - update as required
-USER_ID = 348849803 # Sharechat user id
-PASSCODE = "e555de8136fb06944f7f" # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
+USER_ID = os.environ("SHARECHAT_USER_ID")
+PASSCODE = os.environ("SHARECHAT_PASSWORD") # inspect page > network > bucketFeed or requestType81 > headers > request payload > passcode
 PATH = os.getcwd()
 CHROMEDRIVER_PATH = os.path.join(PATH, "chromedriver")
 

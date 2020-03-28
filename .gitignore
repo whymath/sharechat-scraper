@@ -1,0 +1,11 @@
+# Editors
+.vscode/
+
+# Mac/OSX
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
