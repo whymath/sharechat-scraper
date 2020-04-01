@@ -9,3 +9,5 @@
 
 # Environments
 .env
+
+**/__pycache__
