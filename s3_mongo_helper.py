@@ -5,6 +5,7 @@ import pymongo
 from pymongo import MongoClient
 from dotenv import load_dotenv
 load_dotenv() 
+import sys
 
 # Helper functions to upload to Mongo and S3
 
@@ -20,12 +21,16 @@ def initialize_s3():
 def initialize_mongo():
     mongo_url = "mongodb+srv://"+os.environ.get("DB_USERNAME")+":"+os.environ.get("DB_PASSWORD")+"@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"   
     cli = MongoClient(mongo_url)
-    db = os.environ.get("DB_NAME")
+    db = cli[os.environ.get("DB_NAME")]
     coll = db[os.environ.get("DB_COLLECTION")]
-    return cli, db, coll 
-    
+    if coll.count_documents({}) > 0:
+        return cli, db, coll 
+    else:
+        print("Error accessing Mongo collection")
+        sys.exit()
+        
 
-def upload_to_s3(file, filename, bucket, content_type):
+def upload_to_s3(s3, file, filename, bucket, content_type):
     with open(file, "rb")as data:
         s3.upload_fileobj(Fileobj = data, 
                           Bucket = bucket,
@@ -33,6 +38,6 @@ def upload_to_s3(file, filename, bucket, content_type):
                           ExtraArgs={'ContentType': content_type,
                                     'ACL': 'public-read'})  
                
-def upload_to_mongo(data):
+def upload_to_mongo(data, coll):
     coll.insert_one(data) 
 
