@@ -24,7 +24,7 @@ def initialize_mongo():
     db = cli[os.environ.get("DB_NAME")]
     coll = db[os.environ.get("DB_COLLECTION")]
     if coll.count_documents({}) > 0:
-        return cli, db, coll 
+        return coll 
     else:
         print("Error accessing Mongo collection")
         sys.exit()
