@@ -29,13 +29,10 @@ import s3_mongo_helper
 
 USER_ID = os.environ.get("SHARECHAT_USER_ID")
 PASSCODE = os.environ.get("SHARECHAT_PASSWORD")
-# temp_tag_hashes = ["1RgBZQ", "5anPZA", "3NE91Z", 
-#                     "pkArae", "X6Pxqx", "3NZwyK", 
-#                     "EXrjQQ", "Wvmx9m", "0zw6BG"]
 temp_tag_hashes = ["5anPZA", "3NE91Z", 
                    "pkArae", "X6Pxqx", "3NZwyK", 
-                    "EXrjQQ", "Wvmx9m", "0zw6BG", "VK7MKz"]  # CHANGE AS REQUIRED
-MORE_PAGES = 2 # number of pages to scrape in addition to landing page
+                    "EXrjQQ", "Wvmx9m", "0zw6BG"]  # CHANGE AS REQUIRED
+MORE_PAGES = 1 # number of pages to scrape in addition to landing page
 scrape_by_type = True 
 
 # Main function

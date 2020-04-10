@@ -23,7 +23,8 @@ import selenium
 from selenium import webdriver
 
 # For targeted tag scraper
-# Generates params for api requests
+
+# Generates params for API requests
 def generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None):
     requests_dict = {
     "first_request": { # gets tag info 
@@ -82,6 +83,27 @@ def get_first_payload_data(payload_dict):
     bucket_id = payload_dict["payload"]["bi"]
     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
 
+# Gets payload metadata that is common across content types
+def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts):
+    timestamp.append(payload_key["o"])
+    language.append(payload_key["m"])
+    media_type.append(payload_key["t"])
+    post_permalink.append(payload_key["permalink"])
+    if "c" in payload_key.keys():
+        caption.append(payload_key["c"])
+    else:
+        caption.append(None)
+    virality_metrics = {"usc": external_shares,
+                       "lc": likes,
+                       "c2": comments,
+                       "repostCount": reposts}
+    for metric in virality_metrics:
+        if metric in payload_key.keys():
+            virality_metrics[metric].append(payload_key[metric])
+        else:
+            virality_metrics[metric].append(0)
+
+
 # Gets tag contents i.e. metadata for each post 
 def get_second_payload_data(payload_dict):
     media_link = []
@@ -95,74 +117,29 @@ def get_second_payload_data(payload_dict):
     post_permalink = []
     caption = []
     text = []
-    virality_metrics = {"usc": external_shares,
-                       "lc": likes,
-                       "c2": comments,
-                       "repostCount": reposts}
     
-    #media_types = ["image", "video", "text"]
     for i in payload_dict["payload"]["d"]:
         if i["t"] == "image":
-            timestamp.append(i["o"])
-            language.append(i["m"])
-            media_type.append(i["t"])
-            post_permalink.append(i["permalink"])
+            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
             media_link.append(i["g"])
             text.append(None)
-            if "c" in i.keys():
-                caption.append(i["c"])
-            else:
-                caption.append(None)
-            for metric in virality_metrics:
-                if metric in i.keys():
-                    virality_metrics[metric].append(i[metric])
-                else:
-                    virality_metrics[metric].append(0)
-
         elif i["t"] == "video":
-            timestamp.append(i["o"])
-            language.append(i["m"])
-            media_type.append(i["t"])
-            post_permalink.append(i["permalink"])
+            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
             media_link.append(i["v"])
             text.append(None)
-            if "c" in i.keys():
-                caption.append(i["c"])
-            else:
-                caption.append(None)
-            for metric in virality_metrics:
-                if metric in i.keys():
-                    virality_metrics[metric].append(i[metric])
-                else:
-                    virality_metrics[metric].append(0)
-
         elif i["t"] == "text": 
-            print(i)
-            timestamp.append(i["o"])
-            language.append(i["m"])
-            media_type.append(i["t"])
-            post_permalink.append(i["permalink"])
-            media_link.append(None)
-            if "x" in i.keys():
+            if "x" in i.keys(): # if post metadata contains the text
+                get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
                 text.append(i["x"])
+                media_link.append(None)
             else:
-                text.append(None)
-            if "c" in i.keys():
-                caption.append(i["c"])
-            else:
-                caption.append(None)
-            for metric in virality_metrics:
-                if metric in i.keys():
-                    virality_metrics[metric].append(i[metric])
-                else:
-                    virality_metrics[metric].append(0)
-
+                pass
         else:
             pass 
     return media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text
 
 
-# Gets next offset hash i.e. enables multi page scraping
+# Gets next offset hash for scraping the next page
 def get_next_offset_hash(payload_dict):
     if "nextOffsetHash" in payload_dict["payload"]:
         next_offset_hash = payload_dict["payload"]["nextOffsetHash"]
@@ -186,22 +163,19 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
         first_body = requests_dict["first_request"]["tag_body"]
         first_headers = requests_dict["first_request"]["headers"]
         first_response = requests.post(url=first_url, json=first_body, headers=first_headers)
-        print("first response:", first_response)
         first_response_dict = json.loads(first_response.text)
         tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_first_payload_data(first_response_dict)
 
-    # Send API requests to scrape tag media & metadata
+    # Send API requests to scrape tag media & metadata from multiple pages
 
         second_url = requests_dict["second_request"]["api_url"]
         second_body = requests_dict["second_request"]["tag_body"]
         second_headers = requests_dict["second_request"]["headers"] 
         time.sleep(uniform(0.5,2))
         second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
-        print("second response:", second_response)
         second_response_dict = json.loads(second_response.text)
         media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(second_response_dict)
         next_offset_hash = get_next_offset_hash(second_response_dict)
-        print(len(timestamp), len(caption), len(text), len(media_link), len(language), len(media_type), len(external_shares), len(likes), len(comments), len(reposts), len(post_permalink))
         tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
         columns = ["media_link", "timestamp", "language", "media_type", 
         "external_shares", "likes", "comments", 
@@ -214,8 +188,7 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
         df = df.append(tag_data, sort = True)
         time.sleep(uniform(30,35)) # random time delay between requests
 
-        for i in range(MORE_PAGES): # scrape from multiple pages
-            print("new page")
+        for i in range(MORE_PAGES): 
             if next_offset_hash is not None:
                 second_url = requests_dict["second_request"]["api_url"]
                 second_body = requests_dict["second_request"]["tag_body"]
@@ -223,7 +196,6 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                 second_headers = requests_dict["second_request"]["headers"] 
                 time.sleep(uniform(0.5,2))
                 second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
-                print("second response pages:", second_response)
                 second_response_dict = json.loads(second_response.text)
                 media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(second_response_dict)
                 next_offset_hash = get_next_offset_hash(second_response_dict)
@@ -241,31 +213,32 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
 
             else:
                 continue
-
+        
         if scrape_by_type == True:
-            print("scrape_by_type : true")
-            content_types = ["image", "video", "text"]
-            for i in content_types:
-                print(i)
-                requests_dict["third_request"]["tag_body"]["message"]["type"] = "{}".format(i)
-                third_url = requests_dict["third_request"]["api_url"]
-                third_body = requests_dict["third_request"]["tag_body"]
-                third_headers = requests_dict["third_request"]["headers"] 
-                third_response = requests.post(url=third_url, json=third_body, headers=third_headers)
-                print("third response:", third_response)
-                third_response_dict = json.loads(third_response.text)
-                media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(third_response_dict)
-                tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
-                columns = ["media_link", "timestamp", "language", "media_type", 
+            # Scrape more content from tag by content type
+            content_types = ["text"] # add image, video and others if required
+            try:
+                for i in content_types:
+                    requests_dict["third_request"]["tag_body"]["message"]["type"] = "{}".format(i)
+                    third_url = requests_dict["third_request"]["api_url"]
+                    third_body = requests_dict["third_request"]["tag_body"]
+                    third_headers = requests_dict["third_request"]["headers"] 
+                    third_response = requests.post(url=third_url, json=third_body, headers=third_headers)
+                    third_response_dict = json.loads(third_response.text)
+                    media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(third_response_dict)
+                    tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
+                    columns = ["media_link", "timestamp", "language", "media_type", 
                                 "external_shares", "likes", "comments", 
                                     "reposts", "post_permalink", "caption", "text"])
-                tag_data["tag_name"] = tag_name
-                tag_data["tag_translation"] = tag_translation
-                tag_data["tag_genre"] = tag_genre
-                tag_data["bucket_name"] = bucket_name
-                tag_data["bucket_id"] = int(bucket_id)
-                df = df.append(tag_data, sort = True)
-                time.sleep(uniform(30,35)) 
+                    tag_data["tag_name"] = tag_name
+                    tag_data["tag_translation"] = tag_translation
+                    tag_data["tag_genre"] = tag_genre
+                    tag_data["bucket_name"] = bucket_name
+                    tag_data["bucket_id"] = int(bucket_id)
+                    df = df.append(tag_data, sort = True)
+                    time.sleep(uniform(30,35)) 
+            except Exception:
+                pass
 
         else:
             continue
@@ -302,28 +275,36 @@ def sharechat_s3_upload(df):
     for index, row in df.iterrows():
         if (row["media_type"] == "image"):
                 # Create S3 file name 
-            name = row["filename"]+".jpg"
+            filename = row["filename"]+".jpg"
                 # Get media
             temp = wget.download(row["media_link"])
                 # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=name, bucket=bucket, content_type=row["media_type"])
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove(temp)
-                # Create S3 URL
-            url = aws+bucket+"/"+name
-                # Add S3 url to dataframe
-            df.at[index, "s3_url"] = url
         elif (row["media_type"] == "video"):
                 # Create S3 file name
-            name = row["filename"]+".mp4"
+            filename = row["filename"]+".mp4"
                 # Get media
             temp = wget.download(row["media_link"])
                 # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=name, bucket=bucket, content_type=row["media_type"])
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove(temp)
-                # Create S3 URL
-            url = aws+bucket+"/"+name
-                # Add S3 url to dataframe
-            df.at[index, "s3_url"] = url
+        elif (row["media_type"] == "text"):
+                # Create S3 file name
+            filename = row["filename"]+".txt"
+                # Create text file
+            with open("temp.txt", "w+") as f:
+                f.write(row["text"])
+                # Upload media to S3
+            s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
+            os.remove("temp.txt")
+        else:
+            pass
+    # Add S3 urls with correct extensions
+    df.reset_index(inplace = True)
+    df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
+    df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
+    df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
     return df # return df with s3 urls added
 
 # Mongo upload function for targeted tag scraper
