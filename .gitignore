@@ -9,8 +9,11 @@
 
 # Environments
 .env
-
 **/__pycache__
 
 # Python
 ml.py 
+
+# Temporary test data files
+*.pkl
+*.csv
