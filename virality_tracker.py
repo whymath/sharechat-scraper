@@ -14,7 +14,7 @@ load_dotenv()
 USER_ID = os.environ.get("SHARECHAT_USER_ID")
 PASSCODE = os.environ.get("SHARECHAT_PASSWORD")
 today = pd.Timestamp("today")
-metrics = ["external_shares", "likes", "comments", "reposts"]
+metrics = ["external_shares", "likes", "comments", "reposts", "views"]
 sample_size = 50
 
 def create_sample_df(main_df, n):
@@ -51,7 +51,8 @@ def scrape_metrics(response_dict):
     virality_metrics = {"c2": "comments",
                         "usc": "external_shares",
                        "lc": "likes",
-                       "repostCount": "reposts"}
+                       "repostCount": "reposts",
+                       "l": "views"}
     values = [[]]
     for key in virality_metrics:
         if key in response_dict["payload"]["d"].keys():
@@ -89,7 +90,8 @@ def virality_tracker(sample_df_path, today):
     result_df = pd.DataFrame(columns = ["comments_t+"+diff,
                                          "external_shares_t+"+diff,
                                          "likes_t+"+diff,
-                                         "reposts_t+"+diff])
+                                         "reposts_t+"+diff,
+                                         "views_t+"+diff])
     # Get current virality metrics for each post
     for i in sample_df["post_permalink"]:
         result = get_current_metrics(i)

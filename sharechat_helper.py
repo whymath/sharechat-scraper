@@ -84,7 +84,7 @@ def get_first_payload_data(payload_dict):
     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
 
 # Gets payload metadata that is common across content types
-def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts):
+def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views):
     timestamp.append(payload_key["o"])
     language.append(payload_key["m"])
     media_type.append(payload_key["t"])
@@ -96,7 +96,8 @@ def get_common_metadata(payload_key, timestamp, language, media_type, post_perma
     virality_metrics = {"usc": external_shares,
                        "lc": likes,
                        "c2": comments,
-                       "repostCount": reposts}
+                       "repostCount": reposts,
+                       "l": views}
     for metric in virality_metrics:
         if metric in payload_key.keys():
             virality_metrics[metric].append(payload_key[metric])
@@ -154,7 +155,7 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                                    "media_type", "tag_name", "tag_translation", 
                                  "tag_genre", "bucket_name", "bucket_id", 
                                 "external_shares", "likes", "comments", 
-                                 "reposts", "post_permalink", "caption", "text"])
+                                 "reposts", "post_permalink", "caption", "text", "views"])
     print("Scraping data from Sharechat ...")
     for tag_hash in temp_tag_hashes:
         requests_dict = generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None)
@@ -174,12 +175,12 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
         time.sleep(uniform(0.5,2))
         second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
         second_response_dict = json.loads(second_response.text)
-        media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(second_response_dict)
+        media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(second_response_dict)
         next_offset_hash = get_next_offset_hash(second_response_dict)
-        tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
+        tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
         columns = ["media_link", "timestamp", "language", "media_type", 
         "external_shares", "likes", "comments", 
-        "reposts", "post_permalink", "caption", "text"])
+        "reposts", "post_permalink", "caption", "text", "views"])
         tag_data["tag_name"] = tag_name
         tag_data["tag_translation"] = tag_translation
         tag_data["tag_genre"] = tag_genre
@@ -197,12 +198,12 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                 time.sleep(uniform(0.5,2))
                 second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
                 second_response_dict = json.loads(second_response.text)
-                media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(second_response_dict)
+                media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(second_response_dict)
                 next_offset_hash = get_next_offset_hash(second_response_dict)
-                tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
+                tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
                                 columns = ["media_link", "timestamp", "language", "media_type", 
                                            "external_shares", "likes", "comments", 
-                                             "reposts", "post_permalink", "caption", "text"])
+                                             "reposts", "post_permalink", "caption", "text", "views"])
                 tag_data["tag_name"] = tag_name
                 tag_data["tag_translation"] = tag_translation
                 tag_data["tag_genre"] = tag_genre
@@ -225,11 +226,11 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                     third_headers = requests_dict["third_request"]["headers"] 
                     third_response = requests.post(url=third_url, json=third_body, headers=third_headers)
                     third_response_dict = json.loads(third_response.text)
-                    media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text = get_second_payload_data(third_response_dict)
-                    tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text]), 
+                    media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(third_response_dict)
+                    tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
                     columns = ["media_link", "timestamp", "language", "media_type", 
                                 "external_shares", "likes", "comments", 
-                                    "reposts", "post_permalink", "caption", "text"])
+                                    "reposts", "post_permalink", "caption", "text", "views"])
                     tag_data["tag_name"] = tag_name
                     tag_data["tag_translation"] = tag_translation
                     tag_data["tag_genre"] = tag_genre
