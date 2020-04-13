@@ -84,11 +84,12 @@ def get_first_payload_data(payload_dict):
     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
 
 # Gets payload metadata that is common across content types
-def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views):
+def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page):
     timestamp.append(payload_key["o"])
     language.append(payload_key["m"])
     media_type.append(payload_key["t"])
     post_permalink.append(payload_key["permalink"])
+    profile_page.append("https://sharechat.com/profile/"+payload_key["ath"]["h"])
     if "c" in payload_key.keys():
         caption.append(payload_key["c"])
     else:
@@ -118,26 +119,28 @@ def get_second_payload_data(payload_dict):
     post_permalink = []
     caption = []
     text = []
+    views = []
+    profile_page  = []
     
     for i in payload_dict["payload"]["d"]:
         if i["t"] == "image":
-            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
+            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
             media_link.append(i["g"])
             text.append(None)
         elif i["t"] == "video":
-            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
+            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
             media_link.append(i["v"])
             text.append(None)
         elif i["t"] == "text": 
             if "x" in i.keys(): # if post metadata contains the text
-                get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts)
+                get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
                 text.append(i["x"])
                 media_link.append(None)
             else:
                 pass
         else:
             pass 
-    return media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text
+    return media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page
 
 
 # Gets next offset hash for scraping the next page
@@ -155,7 +158,7 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                                    "media_type", "tag_name", "tag_translation", 
                                  "tag_genre", "bucket_name", "bucket_id", 
                                 "external_shares", "likes", "comments", 
-                                 "reposts", "post_permalink", "caption", "text", "views"])
+                                 "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     print("Scraping data from Sharechat ...")
     for tag_hash in temp_tag_hashes:
         requests_dict = generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None)
@@ -175,12 +178,12 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
         time.sleep(uniform(0.5,2))
         second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
         second_response_dict = json.loads(second_response.text)
-        media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(second_response_dict)
+        media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page = get_second_payload_data(second_response_dict)
         next_offset_hash = get_next_offset_hash(second_response_dict)
-        tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
+        tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page]),
         columns = ["media_link", "timestamp", "language", "media_type", 
         "external_shares", "likes", "comments", 
-        "reposts", "post_permalink", "caption", "text", "views"])
+        "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
         tag_data["tag_name"] = tag_name
         tag_data["tag_translation"] = tag_translation
         tag_data["tag_genre"] = tag_genre
@@ -198,12 +201,12 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                 time.sleep(uniform(0.5,2))
                 second_response = requests.post(url=second_url, json=second_body, headers=second_headers)
                 second_response_dict = json.loads(second_response.text)
-                media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(second_response_dict)
+                media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page = get_second_payload_data(second_response_dict)
                 next_offset_hash = get_next_offset_hash(second_response_dict)
-                tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
+                tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page]), 
                                 columns = ["media_link", "timestamp", "language", "media_type", 
                                            "external_shares", "likes", "comments", 
-                                             "reposts", "post_permalink", "caption", "text", "views"])
+                                             "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
                 tag_data["tag_name"] = tag_name
                 tag_data["tag_translation"] = tag_translation
                 tag_data["tag_genre"] = tag_genre
@@ -217,7 +220,7 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
         
         if scrape_by_type == True:
             # Scrape more content from tag by content type
-            content_types = ["text"] # add image, video and others if required
+            content_types = ["image", "video", "text"] # add image, video and others if required
             try:
                 for i in content_types:
                     requests_dict["third_request"]["tag_body"]["message"]["type"] = "{}".format(i)
@@ -226,11 +229,11 @@ def get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True
                     third_headers = requests_dict["third_request"]["headers"] 
                     third_response = requests.post(url=third_url, json=third_body, headers=third_headers)
                     third_response_dict = json.loads(third_response.text)
-                    media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views = get_second_payload_data(third_response_dict)
-                    tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views]), 
+                    media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page = get_second_payload_data(third_response_dict)
+                    tag_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page]), 
                     columns = ["media_link", "timestamp", "language", "media_type", 
                                 "external_shares", "likes", "comments", 
-                                    "reposts", "post_permalink", "caption", "text", "views"])
+                                    "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
                     tag_data["tag_name"] = tag_name
                     tag_data["tag_translation"] = tag_translation
                     tag_data["tag_genre"] = tag_genre
@@ -267,7 +270,7 @@ def convert_links_to_thumbnails(df):
         return '<img src="'+ path + '"width="200" >' 
     image_df = df[df["media_type"] == "image"]
     pd.set_option('display.max_colwidth', -1)
-    data_html = HTML(image_df.to_html(escape=False ,formatters=dict(thumbnail=path_to_image_html))) 
+    data_html = HTML(image_df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True)) 
     return data_html
 
 # S3 upload function for targeted tag scraper
@@ -314,3 +317,28 @@ def sharechat_mongo_upload(df):
     for i in df.to_dict("records"):
         s3_mongo_helper.upload_to_mongo(data=i, coll=coll) 
 
+
+# Generate html file with thumbnails for image and video posts
+# Ensure temp_dir remains in the same directory as the generated html
+def get_thumbnails(df):
+    def path_to_image_html(path):
+        return '<img src="'+ path + '"width="200" >' 
+    thumbnail = []
+    temp_dir = mkdtemp(dir = os.getcwd())
+    for link in df["media_link"]:
+        if link == link: 
+            if link.split(".")[-1] == "mp4":
+                video_input_path = link
+                img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
+                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
+                thumbnail.append(img_output_path)
+            else:
+                thumbnail.append(link) 
+        else: # if NaN
+            thumbnail.append(None)
+    df['thumbnail'] = np.array(thumbnail)
+    pd.set_option('display.max_colwidth', -1)
+    df_html = HTML(df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True))
+    with open("df.html", "w") as f:
+        f.write(df_html.data)
+        
