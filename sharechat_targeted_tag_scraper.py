@@ -1,6 +1,8 @@
 # API scraper for targeted tag
 # Import libraries
 import os
+import config 
+from config import scraper_params
 import requests
 import pandas as pd
 import numpy as np
@@ -27,35 +29,58 @@ import wget
 import sharechat_helper
 import s3_mongo_helper 
 
-USER_ID = os.environ.get("SHARECHAT_USER_ID")
-PASSCODE = os.environ.get("SHARECHAT_PASSWORD")
-temp_tag_hashes = ["5anPZA", "3NE91Z", 
-                   "pkArae", "X6Pxqx", "3NZwyK", 
-                    "EXrjQQ", "Wvmx9m", "0zw6BG"]  # CHANGE AS REQUIRED
-MORE_PAGES = 1 # number of pages to scrape in addition to landing page
-scrape_by_type = True 
-
 # Main function
-def sharechat_targeted_tag_scraper(temp_tag_hashes):
+def sharechat_targeted_tag_scraper():
     start_time = time.time()
     # Scrape data from tags
-    sharechat_df = sharechat_helper.get_data(temp_tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True)
-    # Save data to S3 & Mongo DB
-    if len(sharechat_df) > 0:
-        complete_df = sharechat_helper.sharechat_s3_upload(sharechat_df) # this df includes the s3 urls
-        sharechat_helper.sharechat_mongo_upload(complete_df)
-        complete_df_html = sharechat_helper.convert_links_to_thumbnails(complete_df)
-        sharechat_helper.save_data_to_disk(complete_df, complete_df_html)
-        print("{} posts scraped and saved".format(len(complete_df)))
-        print("Time taken: %s seconds" % (time.time() - start_time))
-    else:
-        print("No posts scraped!")
-    return complete_df
-    # sharechat_df_html = sharechat_helper.convert_links_to_thumbnails(sharechat_df)
-    # sharechat_helper.save_data_to_disk(sharechat_df, sharechat_df_html)
-    # print("Time taken: %s seconds" % (time.time() - start_time))
-    #return sharechat_df
+    try:
+        sharechat_df = sharechat_helper.get_data(tag_hashes=scraper_params["tag_hashes"],
+                                                 USER_ID=scraper_params["USER_ID"],
+                                                 PASSCODE=scraper_params["PASSCODE"],
+                                                 MORE_PAGES=scraper_params["MORE_PAGES"], 
+                                                 scrape_by_type=scraper_params["scrape_by_type"])
+        # Save data to S3 & Mongo DB
+        if len(sharechat_df) < 1:
+            print("No posts scraped!")
+        else:
+            s3UploadSuccess = False
+            try:
+                sharechat_df = sharechat_helper.sharechat_s3_upload(sharechat_df) # the returned df includes s3 urls
+                s3UploadSuccess = True
+                print("Data uploaded to S3")
+            except Exception:
+                print("S3 upload failed")
+                pass
+            if s3UploadSuccess:
+                try:
+                    sharechat_helper.sharechat_mongo_upload(sharechat_df)
+                    print("Data uploaded to Mongo")            
+                except Exception:
+                    print("Mongo upload failed")
+                    pass 
+                try:
+                    sharechat_df_html = sharechat_helper.convert_links_to_thumbnails(sharechat_df)
+                    print("HTML file created")
+                    with open("sharechat_data_preview.html", "w") as f:
+                        f.write(sharechat_df_html.data)
+                except Exception:
+                    print("HTML file creation failed")
+                    pass 
+            else:
+                pass   
+            try:
+                sharechat_df.to_csv("sharechat_data.csv")
+                print("{} posts scraped and saved".format(len(sharechat_df)))
+            except Exception:
+                print("csv file creation failed")
+            print("Time taken: %s seconds" % (time.time() - start_time))
+            return sharechat_df
+    except Exception:
+        print("Failed to get tag data")
+    
+    
+
 
 # Run scraper
 if __name__ == "__main__":
-    sharechat_targeted_tag_scraper(temp_tag_hashes)
+    sharechat_targeted_tag_scraper()
