@@ -21,6 +21,9 @@ import wget
 import s3_mongo_helper
 import selenium
 from selenium import webdriver
+import tempfile
+from tempfile import mkdtemp
+import shutil
 
 # For targeted tag scraper
 
@@ -258,22 +261,6 @@ def get_data(tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True):
         pass
     return df
 
-# Saves data locally in csv and html formats
-def save_data_to_disk(df, html):
-    with open("sharechat_data_preview.html", "w") as f:
-        f.write(html.data)
-    df.drop("thumbnail", axis = 1, inplace = True)
-    df.to_csv("sharechat_data.csv")
-
-# Converts links to thumbnails in html
-def convert_links_to_thumbnails(df): 
-    df["thumbnail"] = df["media_link"]
-    def path_to_image_html(path):
-        return '<img src="'+ path + '"width="200" >' 
-    image_df = df[df["media_type"] == "image"]
-    pd.set_option('display.max_colwidth', -1)
-    data_html = HTML(image_df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True)) 
-    return data_html
 
 # S3 upload function for targeted tag scraper
 def sharechat_s3_upload(df):
@@ -320,20 +307,22 @@ def sharechat_mongo_upload(df):
         s3_mongo_helper.upload_to_mongo(data=i, coll=coll) 
 
 
-# Generate html file with thumbnails for image and video posts
-# Ensure temp_dir remains in the same directory as the generated html
+# Generate html file with thumbnails for image and video posts     
 def get_thumbnails(df):
     def path_to_image_html(path):
         return '<img src="'+ path + '"width="200" >' 
     thumbnail = []
-    temp_dir = mkdtemp(dir = os.getcwd())
-    for link in df["media_link"]:
+    aws, bucket, s3 = s3_mongo_helper.initialize_s3()
+    temp_dir = tempfile.mkdtemp(dir=os.getcwd())
+    for link in df["s3_url"]:
         if link == link: 
             if link.split(".")[-1] == "mp4":
                 video_input_path = link
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
+                filename = link.split("/")[-1].split(".")[0]+".jpg"
                 subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
-                thumbnail.append(img_output_path)
+                s3_mongo_helper.upload_to_s3(s3=s3, file=img_output_path, filename=filename, bucket=bucket, content_type="image")
+                thumbnail.append(aws+bucket+"/"+filename)
             else:
                 thumbnail.append(link) 
         else: # if NaN
@@ -341,6 +330,25 @@ def get_thumbnails(df):
     df['thumbnail'] = np.array(thumbnail)
     pd.set_option('display.max_colwidth', -1)
     df_html = HTML(df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True))
-    with open("df.html", "w") as f:
-        f.write(df_html.data)
-        
+    shutil.rmtree(temp_dir)
+    return df, df_html
+ 
+
+# Old helper functions
+# Saves data locally in csv and html formats
+def save_data_to_disk(df, html):
+    with open("sharechat_data_preview.html", "w") as f:
+        f.write(html.data)
+    df.drop("thumbnail", axis = 1, inplace = True)
+    df.to_csv("sharechat_data.csv")
+
+
+# Converts links to thumbnails in html
+def convert_links_to_thumbnails(df): 
+    df["thumbnail"] = df["media_link"]
+    def path_to_image_html(path):
+        return '<img src="'+ path + '"width="200" >' 
+    image_df = df[df["media_type"] == "image"]
+    pd.set_option('display.max_colwidth', -1)
+    data_html = HTML(image_df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True)) 
+    return data_html
