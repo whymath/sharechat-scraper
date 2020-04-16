@@ -182,6 +182,10 @@ def get_post_data(payload_dict, tag_name, tag_translation, tag_genre, bucket_nam
                 get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
                 text.append(i["x"])
                 media_link.append(None)
+        elif i["t"] == "link":
+            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
+            media_link.append(i["hl"])
+            text.append(i["hyperlinkTitle"] + " " + i["ld"])
             else:
                 pass
         else:
@@ -282,7 +286,7 @@ def sharechat_s3_upload(df):
                 # Upload media to S3
             s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove(temp)
-        elif (row["media_type"] == "text"):
+        else: # for text posts and media links
                 # Create S3 file name
             filename = row["filename"]+".txt"
                 # Create text file
@@ -291,8 +295,6 @@ def sharechat_s3_upload(df):
                 # Upload media to S3
             s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove("temp.txt")
-        else:
-            pass
     # Add S3 urls with correct extensions
     df.reset_index(inplace = True)
     df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
