@@ -24,11 +24,13 @@ from selenium import webdriver
 import tempfile
 from tempfile import mkdtemp
 import shutil
+import subprocess
+import logging
 
 # For targeted tag scraper
 
 # Generates params for API requests
-def generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None, unix_timestamp=None):
+def generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None, unix_timestamp=None, post_key=None):
     requests_dict = {
     "tag_data_request": { # gets tag info 
         "tag_body": {
@@ -87,38 +89,40 @@ def generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None, unix_
         "api_url": "https://restapi1.sharechat.com/requestType25",
         "headers": {"content-type": "application/json", 
                     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
-                       }
-        }}
+                       }},
+    "virality_metrics_request": { # gets current virality metrics for a post
+        "post_body": {
+            "bn":"broker3",
+            "userId": USER_ID,
+            "passCode": PASSCODE, 
+            "client":"web",
+            "message":{
+                "key": "{}".format(post_key), 
+                "ph": "{}".format(post_key), 
+                "allowOffline": True
+                        }},
+        "api_url" : "https://restapi1.sharechat.com/requestType45",
+        "headers": {"content-type": "application/json", 
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                   }}        
+        }
     return requests_dict
 
-def get_tag_data_response_dict(requests_dict):
-    tag_data_request_url = requests_dict["tag_data_request"]["api_url"]
-    tag_data_request_body = requests_dict["tag_data_request"]["tag_body"]
-    tag_data_request_headers = requests_dict["tag_data_request"]["headers"]
-    tag_data_request_response = requests.post(url=tag_data_request_url, json=tag_data_request_body, headers=tag_data_request_headers)
-    tag_data_response_dict = json.loads(tag_data_request_response.text)
-    return tag_data_response_dict
-
-def get_post_data_response_dict(requests_dict, next_offset_hash=None):
-    post_data_request_url = requests_dict["post_data_request"]["api_url"]
-    post_data_request_body = requests_dict["post_data_request"]["tag_body"]
-    post_data_request_headers = requests_dict["post_data_request"]["headers"] 
-    if next_offset_hash is not None:
-        post_data_request_body["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
+def get_response_dict(requests_dict, request_type,  unix_timestamp, next_offset_hash=None):
+    url = requests_dict[request_type]["api_url"]
+    body = requests_dict[request_type]["tag_body"]
+    headers = requests_dict[request_type]["headers"]
+    if request_type == "post_data_request" and next_offset_hash is not None:
+        body["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
     else: 
         pass 
-    time.sleep(uniform(0.5,2))
-    post_data_request_response = requests.post(url=post_data_request_url, json=post_data_request_body, headers=post_data_request_headers)
-    post_data_response_dict = json.loads(post_data_request_response.text)
-    return post_data_response_dict
-
-def get_type_specific_response_dict(requests_dict):
-    type_specific_request_url = requests_dict["type_specific_request"]["api_url"]
-    type_specific_request_body = requests_dict["type_specific_request"]["tag_body"]
-    type_specific_request_headers = requests_dict["type_specific_request"]["headers"] 
-    type_specific_request_response = requests.post(url=type_specific_request_url, json=type_specific_request_body, headers=type_specific_request_headers)
-    type_specific_response_dict = json.loads(type_specific_request_response.text)
-    return type_specific_response_dict
+    if request_type == "time_specific_request" and unix_timestamp is not None:
+        body["message"]["s"] = "{}".format(unix_timestamp)
+    else: 
+        pass 
+    response = requests.post(url=url, json=body, headers=headers)
+    response_dict = json.loads(response.text)
+    return response_dict
 
 # Gets tag info
 def get_tag_data(payload_dict):
@@ -182,18 +186,20 @@ def get_post_data(payload_dict, tag_name, tag_translation, tag_genre, bucket_nam
                 get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
                 text.append(i["x"])
                 media_link.append(None)
+            else:
+                pass
         elif i["t"] == "link":
-            get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
-            media_link.append(i["hl"])
-            text.append(i["hyperlinkTitle"] + " " + i["ld"])
+            if "ld" in i.keys(): # if post metadata contains link description
+                get_common_metadata(i, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page)
+                media_link.append(i["hl"])
+                text.append(i["ld"])
             else:
                 pass
         else:
             pass 
-
     post_data = pd.DataFrame(np.column_stack([media_link, timestamp, language, media_type, external_shares, likes, comments, reposts, post_permalink, caption, text, views, profile_page]), 
                                 columns = ["media_link", "timestamp", "language", "media_type", 
-                                           "external_shares", "likes", "comments", 
+                                            "external_shares", "likes", "comments", 
                                              "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     post_data["tag_name"] = tag_name
     post_data["tag_translation"] = tag_translation
@@ -211,8 +217,16 @@ def get_next_offset_hash(payload_dict):
         next_offset_hash=None
     return next_offset_hash
 
+# Gets next timestamp for scraping the next page
+def get_next_timestamp(payload_dict):
+    if "n" in payload_dict["payload"]:
+        next_timestamp = payload_dict["payload"]["n"]
+    else:
+        next_timestamp=None
+    return next_timestamp
+
 # Main function to get tag data 
-def get_data(tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True):
+def get_data(tag_hashes, USER_ID, PASSCODE, TRENDING_PAGES, FRESH_PAGES, unix_timestamp, scrape_by_type=True, scrape_by_timestamp=False):
     # Create empty dataframe to collect scraped data
     df = pd.DataFrame(columns = ["media_link", "timestamp", "language", 
                                    "media_type", "tag_name", "tag_translation", 
@@ -221,54 +235,70 @@ def get_data(tag_hashes, USER_ID, PASSCODE, MORE_PAGES, scrape_by_type=True):
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     print("Scraping data from Sharechat ...")
     for tag_hash in tag_hashes:
-        requests_dict = generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None)
-        # Send API request to scrape tag info
-        tag_data_response_dict = get_tag_data_response_dict(requests_dict)
-        tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
+        tagDataScraped = False
+        try:
+            # Send API request to scrape tag info
+            requests_dict = generate_requests_dict(tag_hash, USER_ID, PASSCODE, content_type=None, post_key=None, unix_timestamp=unix_timestamp)
+            tag_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="tag_data_request", unix_timestamp=unix_timestamp, next_offset_hash=None)
+            tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
+            tagDataScraped = True
+        except Exception as e:
+            print("Could not scrape data from tag hash '{}'".format(tag_hash))
+            pass 
         # Send API requests to scrape tag media & metadata 
-        post_data_response_dict = get_post_data_response_dict(requests_dict)
-        post_data = get_post_data(post_data_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-        next_offset_hash = get_next_offset_hash(post_data_response_dict)
-        df = df.append(post_data, sort = True)
-        time.sleep(uniform(30,35)) # random time delay between requests
-
-        # Scrape more pages from same tag
-        for i in range(MORE_PAGES): 
-            post_data_response_dict = get_post_data_response_dict(requests_dict)
-            post_data = get_post_data(post_data_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-            next_offset_hash = get_next_offset_hash(post_data_response_dict)
-            df = df.append(post_data, sort = True)
-            time.sleep(uniform(30,35)) # random time delay between requests
-        
-        if scrape_by_type == True:
-            # Scrape more content from tag by content type
-            content_types = ["image", "video", "text"] # add image, video and others if required
-            try:
-                for i in content_types:
-                    requests_dict["type_specific_request"]["tag_body"]["message"]["type"] = "{}".format(i)
-                    type_specific_response_dict = get_type_specific_response_dict(requests_dict)
-                    post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                    df = df.append(post_data, sort = True)
-                    time.sleep(uniform(30,35)) 
-            except Exception:
-                pass
-
+        if tagDataScraped:
+            if scrape_by_timestamp == False:
+                print("Scraping trending content ...")
+                # Scrape trending pages 
+                for i in range(TRENDING_PAGES): 
+                    try:
+                        post_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="post_data_request", next_offset_hash=None, unix_timestamp=None)
+                        post_data = get_post_data(post_data_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                        next_offset_hash = get_next_offset_hash(post_data_response_dict)
+                        df = df.append(post_data, sort = True)
+                        time.sleep(uniform(30,35)) # random time delay between requests
+                    except Exception:
+                        pass
+                # Scrape more content by content type
+                if scrape_by_type == True:
+                    content_types = ["image", "video", "text"] # add image, video and others if required
+                    try:
+                        for i in content_types:
+                            requests_dict["type_specific_request"]["tag_body"]["message"]["type"] = "{}".format(i)
+                            type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request", next_offset_hash=None, unix_timestamp=None)
+                            post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                            df = df.append(post_data, sort = True)
+                            time.sleep(uniform(30,35)) 
+                    except Exception:
+                        pass
+                else:
+                    pass
+            elif scrape_by_timestamp == True: 
+                print("Scraping fresh content ...")
+                # Scrape fresh pages 
+                for i in range(FRESH_PAGES): 
+                    try:
+                        time_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="time_specific_request", next_offset_hash=None, unix_timestamp=unix_timestamp)
+                        time_specific_data = get_post_data(time_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                        unix_timestamp = get_next_timestamp(time_specific_response_dict)
+                        df = df.append(time_specific_data, sort = True)
+                        time.sleep(uniform(30,35))
+                    except Exception:
+                        pass
         else:
-            continue
-
-    if len(df) > 0:
-        df.drop_duplicates(inplace = True)
-        df["timestamp"] = df["timestamp"].apply(lambda x: datetime.utcfromtimestamp(int(x)))
-        df["filename"] = [str(uuid.uuid4()) for x in range(len(df))]  
-        df["scraped_date"] = datetime.utcnow()
-    else:
-        pass
+            pass
+    df.drop_duplicates(inplace = True)
+    df["timestamp"] = df["timestamp"].apply(lambda x: datetime.utcfromtimestamp(int(x)))
+    df["filename"] = [str(uuid.uuid4()) for x in range(len(df))]  
+    df["scraped_date"] = datetime.utcnow()
     return df
+        
+        
 
 
 # S3 upload function for targeted tag scraper
-def sharechat_s3_upload(df):
-    aws, bucket, s3 = s3_mongo_helper.initialize_s3()
+def sharechat_s3_upload(df, aws, bucket, s3):
+    #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
     for index, row in df.iterrows():
         if (row["media_type"] == "image"):
                 # Create S3 file name 
@@ -303,8 +333,8 @@ def sharechat_s3_upload(df):
     return df # return df with s3 urls added
 
 # Mongo upload function for targeted tag scraper
-def sharechat_mongo_upload(df):
-    coll = s3_mongo_helper.initialize_mongo()
+def sharechat_mongo_upload(df, coll):
+    #coll = s3_mongo_helper.initialize_mongo()
     for i in df.to_dict("records"):
         s3_mongo_helper.upload_to_mongo(data=i, coll=coll) 
 
