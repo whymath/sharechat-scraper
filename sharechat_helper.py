@@ -227,13 +227,16 @@ def get_next_timestamp(payload_dict):
 
 # Main function to get tag data 
 def get_data(tag_hashes, USER_ID, PASSCODE, TRENDING_PAGES, FRESH_PAGES, unix_timestamp, scrape_by_type=True, scrape_by_timestamp=False):
+    print("Scraping data from Sharechat ...")
     # Create empty dataframe to collect scraped data
     df = pd.DataFrame(columns = ["media_link", "timestamp", "language", 
                                    "media_type", "tag_name", "tag_translation", 
                                  "tag_genre", "bucket_name", "bucket_id", 
                                 "external_shares", "likes", "comments", 
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
-    print("Scraping data from Sharechat ...")
+    
+    content_types = ["image", "video", "text"] # add image, video and others if required
+    
     for tag_hash in tag_hashes:
         tagDataScraped = False
         try:
@@ -248,7 +251,7 @@ def get_data(tag_hashes, USER_ID, PASSCODE, TRENDING_PAGES, FRESH_PAGES, unix_ti
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
             if scrape_by_timestamp == False:
-                print("Scraping trending content ...")
+                print("Scraping trending content from '{}' ...".format(tag_name))
                 # Scrape trending pages 
                 for i in range(TRENDING_PAGES): 
                     try:
@@ -257,24 +260,23 @@ def get_data(tag_hashes, USER_ID, PASSCODE, TRENDING_PAGES, FRESH_PAGES, unix_ti
                         next_offset_hash = get_next_offset_hash(post_data_response_dict)
                         df = df.append(post_data, sort = True)
                         time.sleep(uniform(30,35)) # random time delay between requests
+                        
+                        # Scrape additional content by content type
+                        try:
+                            for i in content_types:
+                                requests_dict["type_specific_request"]["tag_body"]["message"]["type"] = "{}".format(i)
+                                type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request", next_offset_hash=None, unix_timestamp=None)
+                                post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                                df = df.append(post_data, sort = True)
+                                time.sleep(uniform(30,35)) 
+                        except Exception:
+                            pass
+
                     except Exception:
                         pass
-                # Scrape more content by content type
-                if scrape_by_type == True:
-                    content_types = ["image", "video", "text"] # add image, video and others if required
-                    try:
-                        for i in content_types:
-                            requests_dict["type_specific_request"]["tag_body"]["message"]["type"] = "{}".format(i)
-                            type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request", next_offset_hash=None, unix_timestamp=None)
-                            post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                            df = df.append(post_data, sort = True)
-                            time.sleep(uniform(30,35)) 
-                    except Exception:
-                        pass
-                else:
-                    pass
+
             elif scrape_by_timestamp == True: 
-                print("Scraping fresh content ...")
+                print("Scraping fresh content from '{}' ...".format(tag_name))
                 # Scrape fresh pages 
                 for i in range(FRESH_PAGES): 
                     try:
@@ -355,7 +357,9 @@ def get_thumbnails(df):
                 subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
                 s3_mongo_helper.upload_to_s3(s3=s3, file=img_output_path, filename=filename, bucket=bucket, content_type="image")
                 thumbnail.append(aws+bucket+"/"+filename)
-            else:
+            elif link.split(".")[-1] == "txt":
+                thumbnail.append(None)
+            else: # if jpg/jpeg/png
                 thumbnail.append(link) 
         else: # if NaN
             thumbnail.append(None)
