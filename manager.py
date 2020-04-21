@@ -56,6 +56,6 @@ def scraper_manager(scraper_params):
                        tag_hashes=scraper_params["tag_hashes"],
                        pages=scraper_params["pages"])
         else:
-            raise ValueError("Invalid value entered for content_to_scrape. Select one from: trending, fresh, virality_metrics, ml")
+            raise ValueError("Invalid value entered for content_to_scrape. Select one from: trending, fresh, virality, ml")
     except Exception as e:
         print(logging.traceback.format_exc())
