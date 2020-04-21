@@ -1,7 +1,3 @@
-# from trending_content_scraper import trending_content_scraper
-# from fresh_content_scraper import fresh_content_scraper
-# from ml_scraper import ml_scraper
-# from virality_scraper import virality_scraper
 from sharechat_scrapers import trending_content_scraper, fresh_content_scraper, ml_scraper, virality_scraper
 import os
 import requests
