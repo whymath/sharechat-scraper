@@ -1,5 +1,6 @@
 # Editors
 .vscode/
+.log
 
 # Mac/OSX
 .DS_Store
@@ -11,9 +12,10 @@
 .env
 **/__pycache__
 
-# Python
-ml.py 
+# Everything in working_files folder
+working_files/
 
-# Temporary test data files
+# Temporary data files saved locally by scrapers
 *.pkl
 *.csv
+*.html
