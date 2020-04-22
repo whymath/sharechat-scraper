@@ -280,6 +280,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
 # Gets fresh tag data
 def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
     # Create empty dataframe to collect scraped data
+    print("Getting fresh data ...")
     df = pd.DataFrame(columns = ["media_link", "timestamp", "language", 
                                    "media_type", "tag_name", "tag_translation", 
                                  "tag_genre", "bucket_name", "bucket_id", 
@@ -302,11 +303,11 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
         # Scrape fresh pages 
             for i in range(pages): 
                 try:
-                    requests_dict["fresh_posts_request"]["tag_body"]["message"]["s"] = "{}".format(unix_timestamp)
-                    time_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="fresh_posts_request")
-                    time_specific_data = get_post_data(time_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                    unix_timestamp = get_next_timestamp(time_specific_response_dict)
-                    df = df.append(time_specific_data, sort = True)
+                    requests_dict["fresh_posts_request"]["body"]["message"]["s"] = "{}".format(unix_timestamp)
+                    fresh_posts_response_dict = get_response_dict(requests_dict=requests_dict, request_type="fresh_posts_request")
+                    fresh_posts_data = get_post_data(fresh_posts_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                    unix_timestamp = get_next_timestamp(fresh_posts_response_dict)
+                    df = df.append(fresh_posts_data, sort = True)
                     time.sleep(uniform(30,35))
                 except Exception:
                     pass           
