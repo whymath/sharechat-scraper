@@ -19,10 +19,10 @@ def initialize_s3():
     return aws, bucket, s3
     
 def initialize_mongo():
-    mongo_url = "mongodb+srv://"+os.environ.get("DB_USERNAME")+":"+os.environ.get("DB_PASSWORD")+"@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"   
+    mongo_url = "mongodb+srv://"+os.environ.get("SHARECHAT_DB_USERNAME")+":"+os.environ.get("SHARECHAT_DB_PASSWORD")+"@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"   
     cli = MongoClient(mongo_url)
-    db = cli[os.environ.get("DB_NAME")]
-    coll = db[os.environ.get("DB_COLLECTION")]
+    db = cli[os.environ.get("SHARECHAT_DB_NAME")]
+    coll = db[os.environ.get("SHARECHAT_DB_COLLECTION")]
     if coll.count_documents({}) > 0:
         return coll 
     else:
@@ -40,4 +40,26 @@ def upload_to_s3(s3, file, filename, bucket, content_type):
                
 def upload_to_mongo(data, coll):
     coll.insert_one(data) 
+
+def count_s3_files(s3, bucket):
+    paginator = s3.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=bucket)
+    file_count = 0
+    for page in pages:
+        for obj in page['Contents']:
+        file_count += 1
+    return file_count
+
+# Get files uploaded to S3 in a date range
+# Date format - datetime.datetime(YYYY, M, D, %h, %m, %s, tzinfo=tzutc()
+def filter_s3_files(s3, bucket, start_date, end_date):
+    objects = s3.list_objects_v2(Bucket=bucket)
+    files = [{'Key': o['Key']} for o in objects['Contents'] if end_date > o['LastModified'] > start_date]
+    return files
+
+def delete_s3_files(s3, bucket, start_date, end_date):
+    keys_to_delete = filter_s3_files(s3, bucket, start_date, end_date)
+    s3.delete_objects(Bucket=bucket, Delete={'Objects': keys_to_delete})
+    print("{} S3 files deleted".format(len(keys_to_delete)))
+
 
