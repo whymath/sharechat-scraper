@@ -47,7 +47,7 @@ def count_s3_files(s3, bucket):
     file_count = 0
     for page in pages:
         for obj in page['Contents']:
-        file_count += 1
+            file_count += 1
     return file_count
 
 # Get files uploaded to S3 in a date range
