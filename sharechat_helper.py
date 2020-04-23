@@ -303,10 +303,10 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
         # Scrape fresh pages 
             for i in range(pages): 
                 try:
-                    requests_dict["fresh_posts_request"]["body"]["message"]["s"] = "{}".format(unix_timestamp)
+                    requests_dict["fresh_posts_request"]["body"]["message"]["s"] = "{}".format(request_timestamp)
                     fresh_posts_response_dict = get_response_dict(requests_dict=requests_dict, request_type="fresh_posts_request")
                     fresh_posts_data = get_post_data(fresh_posts_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                    unix_timestamp = get_next_timestamp(fresh_posts_response_dict)
+                    request_timestamp = get_next_timestamp(fresh_posts_response_dict)
                     df = df.append(fresh_posts_data, sort = True)
                     time.sleep(uniform(30,35))
                 except Exception:
