@@ -287,6 +287,7 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                                 "external_shares", "likes", "comments", 
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     for tag_hash in tag_hashes:
+        request_timestamp = unix_timestamp
         tagDataScraped = False
         try:
             # Send API request to scrape tag info
