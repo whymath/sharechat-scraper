@@ -1,8 +1,8 @@
-Scraper function loaded from sharechat_scrapers.py. Runs when content_to_scrape="trending" in config.py. Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological.
+Scraper function loaded from [Sharechat scrapers](sharechat_scrapers.py). Runs when content_to_scrape="trending" in [Config](config.py). Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological.
 
 ### Scraper workflow:
 
-The scraper performs the following steps using helper functions imported from the sharechat_helper.py and s3_mongo_helper.py modules.
+The scraper performs the following steps using helper functions imported from the [Sharechat helper](sharechat_helper.py) and [S3 Mongo helper](s3_mongo_helper.py) modules.
 
 1. Initializes S3 and Mongo DB connections. This is done first to ensure that any authentication errors are caught before the scraping begins.
 2. Calls get_trending_data() which does the actual scraping as follows  - 

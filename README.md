@@ -2,7 +2,7 @@
 
 This repository contains code for scraping publicly available data from targeted content tags on the Indian social network https://sharechat.com/
 
-![Sharechat Content Tree]sharechat_content_tree.png
+![Sharechat Content Tree](sharechat_content_tree.png)
 
 # Why are we scraping this data?
 
@@ -35,13 +35,13 @@ If you can't set up a MongoDB or S3 bucket, simply comment out the lines which i
 
 config.py is the only script you need to run to start scraping. It contains a dictionary named scraper_params. Depending on the values entered in this dictionary, the manager.py called by config.py will run one of the following Sharechat scrapers - 
 
-docs/Sharechat trending content scraper.md
+[Sharechat trending content scraper](docs/sharechat_trending_content_scraper.md)
 
-docs/Sharechat fresh content scraper.md
+[Sharechat fresh content scraper](docs/sharechat_fresh_content_scraper.md)   
 
-docs/Sharechat ML scraper.md
+[Sharechat ML scraper](docs/sharechat_ml_scraper.md) 
 
-docs/Sharechat virality scraper.md (development stage)
+[Sharechat virality scraper](docs/sharechat_virality_scraper.md) (development stage)
 
 **Usage**: Enter values in the scraper_params dictionary as per the scraping requirement, then run the file.
 
@@ -52,9 +52,9 @@ scraper_params takes the following key:value pairs -
   These two key:value pairs are required by all the scrapers in order to send requests to the Sharechat API. Your user id and passcode may unfortunately not be very obvious, but instructions for finding them are given below. 
 * tag_hashes: <tag_hashes_passed_as_list_of_strings>\
   Tag hashes are identifiers for content tags. These must be selected after a manual inspection of tags on Sharechat. Instructions for finding tag hashes are given below. 
-*  content_to_scrape: <string>\
+*  content_to_scrape: <string_value>\
   This value determines which scraper will be launched by the scraper manager. Possible values are "trending", "fresh", "ml" and "virality"
-*  pages: <integer>\
+*  pages: <integer_value>\
   Number of pages to scrape. One page typically contains 10 posts. This is a required value when content_to_scrape = "trending" or "fresh" or "ml". This number should be kept reasonably low to avoid bombarding the Sharechat API with requests.
 * unix_timestamp: <10_digit_unix_timestamp_passed_as_string> \
   This is a required value when content_to_scrape="fresh", and it determines the point from which the scraper will start scraping backwards in time
@@ -68,7 +68,7 @@ In future, virality metrics will be updated directly in the Sharechat Mongo DB a
 3. *Click on a content bucket of interest, eg. 'Sharechat Trends'*
 4. *Right click on the page and click on Inspect > Network > XHR*
 5. *Click on a tag of interest inside the content bucket, eg. 'Ambedkar Jayanti'. This will generate a requestType66 under the Name tab in the Inspect window and take you to the tag page*
-6. *Look at the url in address bar. The tag hash is the alphanumeric code following (https://sharechat.com/tag/
+6. *Look at the url in address bar. The tag hash is the alphanumeric code following https://sharechat.com/tag/
 7. *Click on requestType66 *
    * *Click on Headers > Request Payload. Your Sharechat user id and passcode can be seen inside the request payload. (They can also be seen inside the request payloads for other types of requests*
    * *Click on Preview > payload. The tag hash will also be found inside this response payload, so you can confirm that it matches the tag hash in the url*
@@ -124,4 +124,3 @@ We typically review a PR within 2-3 days. We might offer you some feedback to yo
 
 When you submit code changes, your submissions are understood to be under the same licence that covers the project - GPL . Feel free to contact the maintainers if that's a concern.
 
-# 

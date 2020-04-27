@@ -1,10 +1,10 @@
-Scraper function loaded from sharechat_scrapers.py. Runs when content_to_scrape="virality" in config.py. Scrapes the current virality metrics for previously scraped Sharechat content. Works best when the content has been very recently scraped by the fresh content scraper, as virality tracking is found to be most insightful early in the life cycle of social media posts. 
+Scraper function loaded from [Sharechat scrapers](sharechat_scrapers.py). Runs when content_to_scrape="virality" in [Config](config.py). Scrapes the current virality metrics for previously scraped Sharechat content. Works best when the content has been very recently scraped by the fresh content scraper, as virality tracking is found to be most insightful early in the life cycle of social media posts. 
 
 The virality scraper's objective is to help understand the growth cycle for posts on Sharechat and similar platforms in terms of virality metrics like views, likes, shares, comments and reposts. It can be run daily on batches of fresh content to track how posts grow, peak and plateau. It is currently in the local development stage.
 
 ### Scraper workflow:
 
-The scraper performs the following steps using helper functions imported from sharechat_helper.py 
+The scraper performs the following steps using helper functions imported from [Sharechat helper](sharechat_helper.py)
 
 1. Loads a CSV file containing post data scraped by one of Tattle's Sharechat content scrapers. Ideally this is recent data scraped by the fresh content scraper. The data is stored in a dataframe called df
 2. Calculates the difference (number of days) between the present day and 't', the day on which the data was posted. For this to work properly, all timestamps in the "timestamp" column of the loaded data must be from the same day
