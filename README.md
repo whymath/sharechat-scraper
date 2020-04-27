@@ -6,7 +6,7 @@ This repository contains code for scraping publicly available data from targeted
 
 # Why are we scraping this data?
 
-One of Tattle's key goals is to create new knowledge around misinformation/disinformation on social media in India. To this end, we're creating an open archive of relevant multilingual content circulated on chat apps and social networks such as Sharechat. Learn more about our goals and values here - https://tattle.co.in/faq
+One of Tattle's key goals is to create new knowledge around misinformation/disinformation on social media in India. To this end, we're creating an open archive of relevant multilingual content circulated on chat apps and social networks such as Sharechat. Read more about our goals and values here - https://tattle.co.in/faq
 
 # Running locally
 
