@@ -74,7 +74,7 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                 try: 
                     print("HTML preview file creation in progress ...")
                     sharechat_df, sharechat_df_html = sharechat_helper.get_thumbnails(sharechat_df)
-                    with open("sharechat_data_preview.html", "w") as f:
+                    with open("sharechat_trending_data_preview.html", "w") as f:
                         f.write(sharechat_df_html.data)
                         print("HTML preview file created")
                 except Exception as e:
@@ -93,7 +93,7 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                 pass   
             try:
                 print("CSV file creation in progress ... ")
-                sharechat_df.to_csv("sharechat_data.csv")
+                sharechat_df.to_csv("sharechat_trending_data.csv")
                 print("CSV file created")
                 print("{} posts scraped".format(len(sharechat_df)))
             except Exception as e:
@@ -127,8 +127,9 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                                                 tag_hashes,
                                                 pages,
                                                 unix_timestamp)
-        
-        if len(sharechat_df) < 1: 
+
+
+        if len(sharechat_df) < 1:          
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
             # Save data to S3 & Mongo DB
@@ -146,7 +147,7 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                 try: 
                     print("HTML preview file creation in progress ...")
                     sharechat_df, sharechat_df_html = sharechat_helper.get_thumbnails(sharechat_df)
-                    with open("sharechat_data_preview.html", "w") as f:
+                    with open("sharechat_fresh_data_preview.html", "w") as f:
                         f.write(sharechat_df_html.data)
                         print("HTML preview file created")
                 except Exception as e:
@@ -165,7 +166,7 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                 pass   
             try:
                 print("CSV file creation in progress ... ")
-                sharechat_df.to_csv("sharechat_data.csv")
+                sharechat_df.to_csv("sharechat_fresh_data.csv")
                 print("CSV file created")
                 print("{} posts scraped".format(len(sharechat_df)))
             except Exception as e:
@@ -196,7 +197,7 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                                                 PASSCODE,
                                                 tag_hashes,
                                                 pages)
-        # Save data to S3 & Mongo DB
+        # Save data to S3 
         if len(sharechat_df) < 1: 
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
@@ -213,7 +214,7 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                 try: 
                     print("HTML preview file creation in progress ...")
                     sharechat_df, sharechat_df_html = sharechat_helper.get_thumbnails(sharechat_df)
-                    with open("sharechat_data_preview.html", "w") as f:
+                    with open("sharechat_ml_data_preview.html", "w") as f:
                         f.write(sharechat_df_html.data)
                         print("HTML preview file created")
                 except Exception as e:
@@ -224,7 +225,7 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                 pass
             try:
                 print("CSV file creation in progress ... ")
-                sharechat_df.to_csv("sharechat_data.csv")
+                sharechat_df.to_csv("sharechat_ml_data.csv")
                 print("CSV file created")
                 print("{} posts scraped".format(len(sharechat_df)))
             except Exception as e:
@@ -241,7 +242,7 @@ def virality_scraper(USER_ID, PASSCODE, data_path):
     start_time = time.time()
     # Load data
     df = pd.read_csv(data_path)
-    df.reset_index(inplace=True)
+    df.reset_index(drop=True, inplace=True)
     today = str(date.today())
     # Get timestamp for day t
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -256,19 +257,28 @@ def virality_scraper(USER_ID, PASSCODE, data_path):
                                          "views_t+"+diff])
     # Get current virality metrics for each post
     print("Scraping current virality metrics ...")
+    failed = 0
     with tqdm(total=len(df)) as pbar:
         for i in df["post_permalink"]:
-            result = sharechat_helper.get_current_metrics(USER_ID, PASSCODE, i)
-            result_df = result_df.append(pd.DataFrame(result, 
+            try:
+                result = sharechat_helper.get_current_metrics(USER_ID, PASSCODE, i)
+                result_df = result_df.append(pd.DataFrame(result, 
                                                     columns = result_df.columns, 
                                                     ), sort = True)
-            pbar.update(1)
+                pbar.update(1)
+            except Exception:
+                result_df = result_df.append(pd.Series(), ignore_index=True)
+                failed += 1
+                pass
+                pbar.update(1)
     # Add scraped metrics to data
     new_df = pd.concat([df.reset_index(drop=True), result_df.reset_index(drop=True)], axis = 1)
     # Save combined data
     "Saving scraped metrics ..."
     sharechat_helper.save_updated_df(new_df, today)
+    total = len(df)
     print("Scraping complete")
+    print("Updated virality metrics for {} out of {} posts".format(total-failed, total))
     print("Time taken: %s seconds" % (time.time() - start_time))
     return new_df
 

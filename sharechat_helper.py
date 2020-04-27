@@ -230,9 +230,9 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                                  "tag_genre", "bucket_name", "bucket_id", 
                                 "external_shares", "likes", "comments", 
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
-    
     content_types = ["image", "video", "text"] # add others if required
     for tag_hash in tag_hashes:
+        print(tag_hash)
         tagDataScraped = False
         try:
             # Send API request to scrape tag info
@@ -246,6 +246,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
             pass 
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
+            print("yes")
             next_offset_hash = None
             # Scrape trending pages 
             for i in range(pages): 
@@ -255,19 +256,19 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                     next_offset_hash = get_next_offset_hash(post_data_response_dict)
                     df = df.append(post_data, sort = True)
                     time.sleep(uniform(30,35)) # random time delay between requests
-                    
-                    # Scrape additional content by content type
-                    try:
-                        for i in content_types:
-                            requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
-                            type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
-                            post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                            df = df.append(post_data, sort = True)
-                            time.sleep(uniform(30,35)) 
-                    except Exception:
-                        pass
                 except Exception:
-                    pass
+                    pass       
+            # Scrape additional content by content type
+            try:
+                for i in content_types:
+                    requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
+                    type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
+                    post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                    df = df.append(post_data, sort = True)
+                    time.sleep(uniform(30,35)) 
+            except Exception:
+                pass
+
         else:
             pass
     df.drop_duplicates(inplace = True)
