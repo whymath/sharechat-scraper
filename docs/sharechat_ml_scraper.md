@@ -1,4 +1,4 @@
-Scraper function loaded from [Sharechat scrapers](sharechat_scrapers.py). Runs when content_to_scrape="ml" in [Config](config.py). Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological.
+Scraper function loaded from [Sharechat scrapers](../sharechat_scrapers.py). Runs when content_to_scrape="ml" in [Config](../config.py). Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological.
 
 The ML scraper's workflow is identical to the trending content scraper, except that the scraped content is saved in different S3 and Mongo DB locations. Its purpose is to scrape training data samples for a machine learning model that will filter out "irrelevant" content we scrape in the future. This will help us make Tattle's content archive more relevant and useful for fact-checkers and researchers. 
 

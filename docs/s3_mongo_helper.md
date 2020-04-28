@@ -1,4 +1,4 @@
-The [S3 Mongo helper](s3_mongo_helper.py) contains helper functions to upload data to MongoDB and S3. These can be adapted for various scrapers.
+The [S3 Mongo helper](../s3_mongo_helper.py) contains helper functions to upload data to MongoDB and S3. These can be adapted for various scrapers.
 
 `initialize_s3()`: Initializes Boto S3 connection. Requires S3 credentials to be stored in .env file
 

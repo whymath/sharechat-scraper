@@ -1,8 +1,8 @@
-Scraper function loaded from [Sharechat scrapers](sharechat_scrapers.py). Runs when content_to_scrape="trending" in [Config](config.py). Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological.
+Scraper function loaded from [Sharechat scrapers](../sharechat_scrapers.py) Runs when content_to_scrape="trending" in [Config](../config.py). Scrapes content from the "trending" tab on the tag page. The scraped content will not be chronological. 
 
 ### Scraper workflow:
 
-The scraper performs the following steps using helper functions imported from the [Sharechat helper](sharechat_helper.py) and [S3 Mongo helper](s3_mongo_helper.py) modules.
+The scraper performs the following steps using helper functions imported from the [Sharechat helper](../sharechat_helper.py) and [S3 Mongo helper](../s3_mongo_helper.py) modules.
 
 1. Initializes S3 and Mongo DB connections. This is done first to ensure that any authentication errors are caught before the scraping begins.
 2. Calls get_trending_data() which does the actual scraping as follows  - 
@@ -33,7 +33,7 @@ The scraper performs the following steps using helper functions imported from th
    7. Returns the main dataframe 
 3. Uploads the scraped data to an S3 bucket with a helper function called sharechat_s3_upload() that uses the common s3_mongo_helper module. This function returns the dataframe with an **S3 url **added to each post (row)
 
-   If the S3 upload is successful, the scraper proceeds to step 5. If the S3 upload fails, the scraper jumps to step 8. 
+   If the S3 upload is successful, the scraper proceeds to step 4. If the S3 upload fails, the scraper jumps to step 8. 
 4. Generates thumbnails for scraped images and videos saved on S3
 5. Creates and locally saves HTML file containing the scraped content and thumbnails. This is handy for previewing and sharing the content.
 6. Uploads the scraped data including S3 urls to Mongo DB with a helper function called sharechat_mongo_upload() that uses the common s3_mongo_helper module

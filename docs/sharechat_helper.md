@@ -1,4 +1,4 @@
-The [Sharechat helper](sharechat_helper.py) contains common helper functions for various [Sharechat scrapers](sharechat_scrapers.py). 
+The [Sharechat helper](../sharechat_helper.py) contains common helper functions for various [Sharechat scrapers](../sharechat_scrapers.py). 
 
 `generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, unix_timestamp=None, post_key=None)`: Generates parameters for API requests. Used by all scrapers
 
