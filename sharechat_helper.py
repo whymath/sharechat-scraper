@@ -27,6 +27,11 @@ import shutil
 import subprocess
 import logging
 from tqdm import tqdm
+import boto
+import boto3
+import pymongo
+from pymongo import MongoClient
+import sys
 
 # For targeted tag scraper
 
@@ -232,7 +237,6 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     content_types = ["image", "video", "text"] # add others if required
     for tag_hash in tag_hashes:
-        print(tag_hash)
         tagDataScraped = False
         try:
             # Send API request to scrape tag info
@@ -246,7 +250,6 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
             pass 
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
-            print("yes")
             next_offset_hash = None
             # Scrape trending pages 
             for i in range(pages): 
@@ -445,8 +448,7 @@ def ml_upload_to_s3(s3, file, filename, bucket, content_type):
                           Bucket = bucket,
                           Key = "machinelearning-negatives/"+filename)  
 
-def ml_sharechat_s3_upload(df):
-    aws, bucket, s3 = ml_initialize_s3()  
+def ml_sharechat_s3_upload(df, aws, bucket, s3):
     for index, row in df.iterrows():
         if (row["media_type"] == "image"):
                 # Create S3 file name 
@@ -464,7 +466,7 @@ def ml_sharechat_s3_upload(df):
                 # Upload media to S3
             ml_upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove(temp)
-        elif (row["media_type"] == "text"):
+        else: # for text posts and media links
                 # Create S3 file name
             filename = row["filename"]+".txt"
                 # Create text file
@@ -473,14 +475,64 @@ def ml_sharechat_s3_upload(df):
                 # Upload media to S3
             ml_upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
             os.remove("temp.txt")
-        else:
-            pass
     # Add S3 urls with correct extensions
     df.reset_index(inplace = True)
-    df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/machinelearning-negatives/"+df["filename"]+".jpg"
-    df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/machinelearning-negatives/"+df["filename"]+".mp4"
-    df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/machinelearning-negatives/"+df["filename"]+".txt"
+    df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
+    df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
+    df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
     return df # return df with s3 urls added
+
+
+def sharechat_s3_upload(df, aws, bucket, s3):
+    #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
+    for index, row in df.iterrows():
+        if (row["media_type"] == "image"):
+                # Create S3 file name 
+            filename = row["filename"]+".jpg"
+                # Get media
+            temp = wget.download(row["media_link"])
+                # Upload media to S3
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+            os.remove(temp)
+        elif (row["media_type"] == "video"):
+                # Create S3 file name
+            filename = row["filename"]+".mp4"
+                # Get media
+            temp = wget.download(row["media_link"])
+                # Upload media to S3
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+            os.remove(temp)
+        else: # for text posts and media links
+                # Create S3 file name
+            filename = row["filename"]+".txt"
+                # Create text file
+            with open("temp.txt", "w+") as f:
+                f.write(row["text"])
+                # Upload media to S3
+            s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
+            os.remove("temp.txt")
+    # Add S3 urls with correct extensions
+    df.reset_index(inplace = True)
+    df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
+    df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
+    df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
+    return df # return df with s3 urls added
+
+def ml_initialize_mongo():
+    mongo_url = "mongodb+srv://"+os.environ.get("SHARECHAT_DB_USERNAME")+":"+os.environ.get("SHARECHAT_DB_PASSWORD")+"@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"   
+    cli = MongoClient(mongo_url)
+    db = cli[os.environ.get("SHARECHAT_DB_NAME")]
+    coll = db[os.environ.get("SHARECHAT_ML_DB_COLLECTION")]
+    if coll.count_documents({}) == 0:
+        return coll 
+    else:
+        print("Error accessing Mongo collection")
+        sys.exit()
+
+def ml_sharechat_mongo_upload(df, coll):
+    #coll = s3_mongo_helper.initialize_mongo()
+    for i in df.to_dict("records"):
+        s3_mongo_helper.upload_to_mongo(data=i, coll=coll) 
 
 # Old helper functions
 # Saves data locally in csv and html formats

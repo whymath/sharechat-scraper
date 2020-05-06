@@ -183,6 +183,7 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
     print("Initializing ...")
     initializationSuccess = False
     try:
+        coll = sharechat_helper.ml_initialize_mongo()
         aws, bucket, s3 = sharechat_helper.ml_initialize_s3()
         initializationSuccess = True
         print("Initialized successfully")
@@ -204,7 +205,8 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
             s3UploadSuccess = False
             try:
                 print("S3 upload in progress ... ")
-                sharechat_df = sharechat_helper.ml_sharechat_s3_upload(sharechat_df) 
+                sharechat_df = sharechat_helper.ml_sharechat_s3_upload(sharechat_df, aws, bucket, s3) 
+                s3UploadSuccess = True
                 print("Data uploaded to S3")
             except Exception as e:
                 print("S3 upload failed")
@@ -221,6 +223,14 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                     print("HTML preview file creation failed")
                     print(logging.traceback.format_exc())
                     pass 
+                try:
+                    print("MongoDB upload in progress ...")
+                    sharechat_helper.sharechat_mongo_upload(sharechat_df, coll)
+                    print("Data uploaded to MongoDB")            
+                except Exception as e:
+                    print("MongoDB upload failed")
+                    print(logging.traceback.format_exc())
+                    pass  
             else:
                 pass
             try:
