@@ -401,8 +401,7 @@ def get_thumbnails(df):
 
 # Virality scraper helper functions
 def save_updated_df(df, today):
-    pd.to_pickle(df, "virality_df_{}.pkl".format(today))
-    df.to_csv("virality_df_{}.csv".format(today))
+    df.to_csv("virality_df_{}.csv".format(today), index=False)
 
 def scrape_metrics(response_dict):
     virality_metrics = {"c2": "comments",
