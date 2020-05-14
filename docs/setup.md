@@ -1,6 +1,6 @@
 # Setup virtual env
 
-`virtualenv --no-site-packages -p python3.6 .`
+`virtualenv -p python3.7 .`
 
 #### Activate the env
 
