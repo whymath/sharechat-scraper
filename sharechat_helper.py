@@ -522,7 +522,7 @@ def ml_initialize_mongo():
     cli = MongoClient(mongo_url)
     db = cli[os.environ.get("SHARECHAT_DB_NAME")]
     coll = db[os.environ.get("SHARECHAT_ML_DB_COLLECTION")]
-    if coll.count_documents({}) == 0:
+    if coll.count_documents({}) > 0:
         return coll 
     else:
         print("Error accessing Mongo collection")
