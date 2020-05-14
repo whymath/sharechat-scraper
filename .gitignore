@@ -37,3 +37,5 @@ instance/
 lib/
 include/
 bin/
+
+share/
