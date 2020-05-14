@@ -19,3 +19,21 @@ working_files/
 *.pkl
 *.csv
 *.html
+
+# virtualenv
+.venv/
+venv/
+ENV/
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# dotenv
+.env
+
+# Distribution / packaging
+.Python
+lib/
+include/
+bin/
