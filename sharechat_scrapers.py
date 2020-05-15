@@ -111,8 +111,10 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
     print("Initializing ...")
     initializationSuccess = False
     try:
-        aws, bucket, s3 = s3_mongo_helper.initialize_s3()
-        coll = s3_mongo_helper.initialize_mongo()
+        # aws, bucket, s3 = s3_mongo_helper.initialize_s3()
+        # coll = s3_mongo_helper.initialize_mongo()
+        coll = sharechat_helper.ml_initialize_mongo()
+        aws, bucket, s3 = sharechat_helper.ml_initialize_s3()
         initializationSuccess = True
         print("Initialized successfully")
     except Exception as e:
@@ -136,7 +138,8 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
             s3UploadSuccess = False
             try:
                 print("S3 upload in progress ...")
-                sharechat_df = sharechat_helper.sharechat_s3_upload(sharechat_df, aws, bucket, s3) # the returned df includes s3 urls
+                # sharechat_df = sharechat_helper.sharechat_s3_upload(sharechat_df, aws, bucket, s3) # the returned df includes s3 urls
+                sharechat_df = sharechat_helper.ml_sharechat_s3_upload(sharechat_df, aws, bucket, s3) 
                 s3UploadSuccess = True
                 print("Data uploaded to S3")
             except Exception as e:
@@ -144,16 +147,16 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                 print(logging.traceback.format_exc())
                 pass
             if s3UploadSuccess:
-                try: 
-                    print("HTML preview file creation in progress ...")
-                    sharechat_df, sharechat_df_html = sharechat_helper.get_thumbnails(sharechat_df)
-                    with open("sharechat_fresh_data_preview.html", "w") as f:
-                        f.write(sharechat_df_html.data)
-                        print("HTML preview file created")
-                except Exception as e:
-                    print("HTML preview file creation failed")
-                    print(logging.traceback.format_exc())
-                    pass 
+                # try: 
+                #     print("HTML preview file creation in progress ...")
+                #     sharechat_df, sharechat_df_html = sharechat_helper.get_thumbnails(sharechat_df)
+                #     with open("sharechat_fresh_data_preview.html", "w") as f:
+                #         f.write(sharechat_df_html.data)
+                #         print("HTML preview file created")
+                # except Exception as e:
+                #     print("HTML preview file creation failed")
+                #     print(logging.traceback.format_exc())
+                #     pass 
                 try:
                     print("MongoDB upload in progress ...")
                     sharechat_helper.sharechat_mongo_upload(sharechat_df, coll)
