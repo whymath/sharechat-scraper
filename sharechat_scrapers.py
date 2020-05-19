@@ -56,9 +56,12 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages):
                                                 tag_hashes,
                                                 pages)
         
+        
         if len(sharechat_df) < 1: 
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
+            # Save data locally
+            sharechat_df.to_pickle("sharechat_df.pkl")
             # Save data to S3 & Mongo DB
             s3UploadSuccess = False
             try:
@@ -132,6 +135,8 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
         if len(sharechat_df) < 1:          
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
+            # Save data locally
+            sharechat_df.to_pickle("sharechat_df.pkl")
             # Save data to S3 & Mongo DB
             s3UploadSuccess = False
             try:
@@ -202,6 +207,8 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages):
         if len(sharechat_df) < 1: 
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
+            # Save data locally
+            sharechat_df.to_pickle("sharechat_df.pkl")
             s3UploadSuccess = False
             try:
                 print("S3 upload in progress ... ")
@@ -265,6 +272,7 @@ def virality_scraper(USER_ID, PASSCODE, data_path):
                                          "likes_t+"+diff,
                                          "reposts_t+"+diff,
                                          "views_t+"+diff])
+    
     # Get current virality metrics for each post
     print("Scraping current virality metrics ...")
     failed = 0
@@ -281,6 +289,9 @@ def virality_scraper(USER_ID, PASSCODE, data_path):
                 failed += 1
                 pass
                 pbar.update(1)
+    
+    # Save data locally
+    result_df.to_pickle("result_df.pkl")
     # Add scraped metrics to data
     new_df = pd.concat([df.reset_index(drop=True), result_df.reset_index(drop=True)], axis = 1)
     # Save combined data
