@@ -1,0 +1,32 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: development
+
+    - name: Publish to Docker
+      uses: zenato/docker-action@master
+      with:
+        username: tattletech
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: tattletech/sharechat-scraper
+        tag: latest
+
+    - name: Notify on Slack
+      uses: rtCamp/action-slack-notify@v2.0.0
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_MESSAGE: 'Updated Docker Registry for sharechat-scraper:latest'
+        SLACK_TITLE: 'update-registry-latest job complete'
+        SLACK_COLOR: '#020637'
+        SLACK_ICON: https://tattle-media.s3.amazonaws.com/monogram-dark.svg
