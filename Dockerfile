@@ -1,8 +1,4 @@
-FROM python:3.8.1-alpine3.11
-RUN apk add gcc
-RUN apk add linux-headers
-RUN apk add --update alpine-sdk
-RUN apk add libffi-dev
+FROM python:3.8.1-buster
 COPY . /app
 WORKDIR /app
 ENV FLASK_APP=server.py
