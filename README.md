@@ -14,7 +14,7 @@ One of Tattle's key goals is to create new knowledge around misinformation/disin
 2. Fork the repository 
 3. Install required Python packages: `pip install requirements.txt`
 4. Set up an AWS S3 bucket to store the scraped content (images, videos, text) and a MongoDB to store the scraped metadata (timestamps, likes, shares etc.)\
-If you can't set up a MongoDB or S3 bucket, simply comment out the lines which initialize and upload data to S3 and MongoDB in the relevant scraper script. Scraper scripts can be found in [sharechat_scrapers.py](sharechat_scrapers.py). If you need help doing this, please reach out to us. 
+If you can't set up a MongoDB or S3 bucket, set the "mode" to "local" in the Config file (see no. 6)
 5. Create a .env file in the same folder and save your Sharechat, MongoDB and S3 access credentials in the .env file. These should be in the following format:
 
    ```
@@ -60,6 +60,8 @@ scraper_params takes the following key:value pairs -
   This is a required value when content_to_scrape="fresh", and it determines the point from which the scraper will start scraping backwards in time
 * data_path: Path to a local CSV file containing previously scraped Sharechat content. Currently, this is a required value when content_to_scrape="virality".  The virality scraper will scrape and update the current virality metrics for the Sharechat posts in this file. \
 In future, virality metrics will be updated directly in the Sharechat Mongo DB and this key will be removed from scraper_params.
+* mode: <string_value>\
+This value determines whether the scraped data should be stored only locally or locally + in a MongoDB and Amazon s3 bucket. Possible values are "local" and "archive".
 
 *Instructions for finding your Sharechat user id, passcode and tag hashes:*
 
@@ -75,7 +77,7 @@ In future, virality metrics will be updated directly in the Sharechat Mongo DB a
 
 # Immediate Roadmap
 
-We are working on a machine learning model that will filter out any irrelevant content we scrape. We define *relevant *content as that which is misinformation, could potentially become misinformation, or is of historical value.
+We are working on a machine learning model that will filter out any irrelevant content we scrape. We define *relevant* content as that which is misinformation, could potentially become misinformation, or is of historical value.
 
 # Want to contribute to this repository?
 
