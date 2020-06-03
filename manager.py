@@ -40,21 +40,26 @@ def scraper_manager(scraper_params):
             trending_content_scraper(USER_ID=scraper_params["USER_ID"],
                                      PASSCODE=scraper_params["PASSCODE"],
                                      tag_hashes=scraper_params["tag_hashes"],
-                                     pages=scraper_params["pages"])
+                                     pages=scraper_params["pages"],
+                                     mode=scraper_params["mode"])
         elif scraper_params["content_to_scrape"] == "fresh":
             fresh_content_scraper(USER_ID=scraper_params["USER_ID"],
                                      PASSCODE=scraper_params["PASSCODE"],
                                      tag_hashes=scraper_params["tag_hashes"],
                                      pages=scraper_params["pages"],
-                                     unix_timestamp=scraper_params["unix_timestamp"]
+                                     unix_timestamp=scraper_params["unix_timestamp"],
+                                     mode=scraper_params["mode"]
                                      )
         elif scraper_params["content_to_scrape"] == "virality":
-            virality_scraper(USER_ID=scraper_params["USER_ID"], PASSCODE=scraper_params["PASSCODE"], data_path=scraper_params["data_path"])
+            virality_scraper(USER_ID=scraper_params["USER_ID"], 
+                            PASSCODE=scraper_params["PASSCODE"], 
+                            data_path=scraper_params["data_path"])
         elif scraper_params["content_to_scrape"] == "ml":
             ml_scraper(USER_ID=scraper_params["USER_ID"],
                        PASSCODE=scraper_params["PASSCODE"],
                        tag_hashes=scraper_params["tag_hashes"],
-                       pages=scraper_params["pages"])
+                       pages=scraper_params["pages"],
+                       mode=scraper_params["mode"])
         else:
             raise ValueError("Invalid value entered for content_to_scrape. Select one from: trending, fresh, virality, ml")
     except Exception as e:
