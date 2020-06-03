@@ -333,13 +333,14 @@ def sharechat_s3_upload(df, aws, bucket, s3):
     #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
     for index, row in df.iterrows():
         try: 
+            print(row["media_type"])
             if (row["media_type"] == "image"):
                     # Create S3 file name 
                 filename = row["filename"]+".jpg"
                     # Get media
                 temp = wget.download(row["media_link"])
                     # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["image/jpeg"])
                 os.remove(temp)
             elif (row["media_type"] == "video"):
                     # Create S3 file name
@@ -347,7 +348,7 @@ def sharechat_s3_upload(df, aws, bucket, s3):
                     # Get media
                 temp = wget.download(row["media_link"])
                     # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["video/mp4"])
                 os.remove(temp)
             else: # for text posts and media links
                     # Create S3 file name
@@ -356,7 +357,7 @@ def sharechat_s3_upload(df, aws, bucket, s3):
                 with open("temp.txt", "w+") as f:
                     f.write(row["text"])
                     # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
+                s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["text/html"])
                 os.remove("temp.txt")
         except:
             pass 
@@ -375,7 +376,7 @@ def sharechat_mongo_upload(df, coll):
 
 
 # Generate html file with thumbnails for image and video posts     
-def get_thumbnails(df):
+def get_thumbnails_from_s3(df):
     def path_to_image_html(path):
         return '<img src="'+ path + '"width="200" >' 
     thumbnail = []
@@ -388,7 +389,7 @@ def get_thumbnails(df):
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
                 filename = link.split("/")[-1].split(".")[0]+".jpg"
                 subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
-                s3_mongo_helper.upload_to_s3(s3=s3, file=img_output_path, filename=filename, bucket=bucket, content_type="image")
+                s3_mongo_helper.upload_to_s3(s3=s3, file=img_output_path, filename=filename, bucket=bucket, content_type="image/jpeg")
                 thumbnail.append(aws+bucket+"/"+filename)
             elif link.split(".")[-1] == "txt":
                 thumbnail.append(None)
@@ -401,6 +402,34 @@ def get_thumbnails(df):
     df_html = HTML(df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True))
     shutil.rmtree(temp_dir)
     return df, df_html
+
+
+def get_thumbnails_from_sharechat(df):
+    def path_to_image_html(path):
+        return '<img src="'+ path + '"width="200" >' 
+    thumbnail = []
+    temp_dir = tempfile.mkdtemp(dir=os.getcwd())
+    for link in df["media_link"]:
+        print(link.split(".")[-1])
+        if link == link: 
+            if link.split(".")[-1] == "mp4":
+                video_input_path = link
+                img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
+                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
+                thumbnail.append(img_output_path)
+            elif link.split(".")[-1] == "txt":
+                thumbnail.append(None)
+            else: # if jpg/jpeg/png
+                thumbnail.append(link) 
+        else: # if NaN
+            thumbnail.append(None)
+    df['thumbnail'] = np.array(thumbnail)
+    #print(df["thumbnail"])
+    pd.set_option('display.max_colwidth', -1)
+    df_html = HTML(df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True))
+    return df, df_html
+
+
 
 # Virality scraper helper functions
 def save_updated_df(df, today):
