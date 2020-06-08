@@ -263,12 +263,15 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                     pass       
             # Scrape additional content by content type
             try:
-                for i in content_types:
-                    requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
-                    type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
-                    post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                    df = df.append(post_data, sort = True)
-                    time.sleep(uniform(30,35)) 
+                for c in content_types:
+                    for i in range(pages): 
+                        requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
+                        type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
+                        post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                        df = df.append(post_data, sort = True)
+                        time.sleep(uniform(30,35))
+                    except Exception:
+                        pass 
             except Exception:
                 pass
 
