@@ -43,13 +43,17 @@ def scraper_manager(scraper_params):
                                      pages=scraper_params["pages"],
                                      mode=scraper_params["mode"])
         elif scraper_params["content_to_scrape"] == "fresh":
+            if "is_cron_job" == True:
+                scraper_params["unix_timestamp"] = str(time.time()).split(".")[0]
+            else:
+                pass
             fresh_content_scraper(USER_ID=scraper_params["USER_ID"],
-                                     PASSCODE=scraper_params["PASSCODE"],
-                                     tag_hashes=scraper_params["tag_hashes"],
-                                     pages=scraper_params["pages"],
-                                     unix_timestamp=scraper_params["unix_timestamp"],
-                                     mode=scraper_params["mode"]
-                                     )
+                                            PASSCODE=scraper_params["PASSCODE"],
+                                            tag_hashes=scraper_params["tag_hashes"],
+                                            pages=scraper_params["pages"],
+                                            unix_timestamp=scraper_params["unix_timestamp"],
+                                            mode=scraper_params["mode"]
+                                            )
         elif scraper_params["content_to_scrape"] == "virality":
             virality_scraper(USER_ID=scraper_params["USER_ID"], 
                             PASSCODE=scraper_params["PASSCODE"], 

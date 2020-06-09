@@ -9,10 +9,11 @@ scraper_params = {
     "PASSCODE": os.environ.get("SHARECHAT_PASSWORD"), 
     "tag_hashes": ["", ""], # insert tag hashes as strings
     "content_to_scrape": "trending", # select one from: trending / fresh / virality / ml
-"pages": 1, # used when content_to_scrape == trending / fresh / ml
+"pages": 5, # used when content_to_scrape == trending / fresh / ml
     "unix_timestamp": "", # 10 digit unix timestamp. used when content_to_scrape == fresh
     "data_path": "", # path to existing Sharechat data csv. used when content_to_scrape == virality
-    "mode": "local" # select from: local / archive
+    "mode": "archive", # select from: local / archive
+    "is_cron_job": False
     }
 
 
