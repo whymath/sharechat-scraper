@@ -118,10 +118,10 @@ def get_response_dict(requests_dict, request_type):
     url = requests_dict[request_type]["api_url"]
     body = requests_dict[request_type]["body"]
     headers = requests_dict[request_type]["headers"]
-    if request_type == "trending_posts_request" and next_offset_hash is not None:
-        body["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
-    else: 
-        pass 
+    # if request_type == "trending_posts_request" and next_offset_hash is not None:
+    #     body["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
+    # else: 
+    #     pass 
     response = requests.post(url=url, json=body, headers=headers)
     response_dict = json.loads(response.text)
     return response_dict
@@ -237,6 +237,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     content_types = ["image", "video", "text"] # add others if required
     for tag_hash in tag_hashes:
+        next_offset_hash = None
         tagDataScraped = False
         try:
             # Send API request to scrape tag info
@@ -250,34 +251,35 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
             pass 
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
-            next_offset_hash = None
             # Scrape trending pages 
             for i in range(pages): 
                 try:
+                    if next_offset_hash is not None:
+                        requests_dict["trending_posts_request"]["body"]["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
+                    else:
+                        pass
                     post_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="trending_posts_request")
                     post_data = get_post_data(post_data_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
                     next_offset_hash = get_next_offset_hash(post_data_response_dict)
                     df = df.append(post_data, sort = True)
                     time.sleep(uniform(30,35)) # random time delay between requests
-                except Exception:
-                    pass       
-            # Scrape additional content by content type
-            try:
-                for c in content_types:
-                    for i in range(pages): 
-                        requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
-                        type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
-                        post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
-                        df = df.append(post_data, sort = True)
-                        time.sleep(uniform(30,35))
-                    except Exception:
-                        pass 
-            except Exception:
-                pass
-
+                except Exception as e:
+                    print(logging.traceback.format_exc())      
+            
+            # Scrape additional content by content type         
+            for c in content_types:
+                try:
+                    requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
+                    type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
+                    post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
+                    df = df.append(post_data, sort = True)
+                    time.sleep(uniform(30,35))
+                except Exception as e:
+                    print(logging.traceback.format_exc())
         else:
             pass
     df.drop_duplicates(inplace = True)
+    print(len(df))
     df["timestamp"] = df["timestamp"].apply(lambda x: datetime.utcfromtimestamp(int(x)))
     df["filename"] = [str(uuid.uuid4()) for x in range(len(df))]  
     df["scraped_date"] = datetime.utcnow()
@@ -331,45 +333,7 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
         
 
 
-# S3 upload function for targeted tag scraper
-def sharechat_s3_upload(df, aws, bucket, s3):
-    #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
-    for index, row in df.iterrows():
-        try: 
-            print(row["media_type"])
-            if (row["media_type"] == "image"):
-                    # Create S3 file name 
-                filename = row["filename"]+".jpg"
-                    # Get media
-                temp = wget.download(row["media_link"])
-                    # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["image/jpeg"])
-                os.remove(temp)
-            elif (row["media_type"] == "video"):
-                    # Create S3 file name
-                filename = row["filename"]+".mp4"
-                    # Get media
-                temp = wget.download(row["media_link"])
-                    # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["video/mp4"])
-                os.remove(temp)
-            else: # for text posts and media links
-                    # Create S3 file name
-                filename = row["filename"]+".txt"
-                    # Create text file
-                with open("temp.txt", "w+") as f:
-                    f.write(row["text"])
-                    # Upload media to S3
-                s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["text/html"])
-                os.remove("temp.txt")
-        except:
-            pass 
-    # Add S3 urls with correct extensions
-    df.reset_index(inplace = True)
-    df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
-    df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
-    df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
-    return df # return df with s3 urls added
+
 
 # Mongo upload function for targeted tag scraper
 def sharechat_mongo_upload(df, coll):
@@ -413,7 +377,6 @@ def get_thumbnails_from_sharechat(df):
     thumbnail = []
     temp_dir = tempfile.mkdtemp(dir=os.getcwd())
     for link in df["media_link"]:
-        print(link.split(".")[-1])
         if link == link: 
             if link.split(".")[-1] == "mp4":
                 video_input_path = link
