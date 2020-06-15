@@ -34,7 +34,12 @@ import pickle
 from tqdm import tqdm
 
 # Trending content scraper
-def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
+def trending_content_scraper(USER_ID=None, PASSCODE=None, tag_hashes=None, bucket_ids=None, pages=None, mode=None, targeting=None):
+    if targeting == "bucket":
+        tag_hashes = sharechat_helper.get_tag_hashes(USER_ID, PASSCODE, bucket_ids)
+        delay = uniform(10,15)
+    elif targeting == "tag":
+        delay = uniform(30,35)
     if mode == "archive":
         print("Scraping in archive mode")
         start_time = time.time()
@@ -56,7 +61,8 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
                                                     USER_ID,
                                                     PASSCODE,
                                                     tag_hashes,
-                                                    pages)
+                                                    pages,
+                                                    delay)
             
             
             if len(sharechat_df) < 1: 
@@ -116,7 +122,8 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
                                                     USER_ID,
                                                     PASSCODE,
                                                     tag_hashes,
-                                                    pages)
+                                                    pages,
+                                                    delay)
         if len(sharechat_df) < 1: 
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
@@ -148,7 +155,12 @@ def trending_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
 
 
 # Fresh content scraper
-def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, mode):
+def fresh_content_scraper(USER_ID=None, PASSCODE=None, tag_hashes=None, bucket_ids=None, pages=None, unix_timestamp=None, mode=None, targeting=None):
+    if targeting == "bucket":
+        tag_hashes = sharechat_helper.get_tag_hashes(USER_ID, PASSCODE, bucket_ids)
+        delay = uniform(10,15)
+    elif targeting == "tag":
+        delay = uniform(30,35)
     if mode == "archive":
         print("Scraping in archive mode")
         start_time = time.time()
@@ -171,7 +183,8 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, 
                                                     PASSCODE,
                                                     tag_hashes,
                                                     pages,
-                                                    unix_timestamp)
+                                                    unix_timestamp,
+                                                    delay)
         if len(sharechat_df) < 1:          
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
@@ -230,7 +243,8 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, 
                                                     PASSCODE,
                                                     tag_hashes,
                                                     pages,
-                                                    unix_timestamp)
+                                                    unix_timestamp,
+                                                    delay)
         if len(sharechat_df) < 1:          
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
@@ -262,7 +276,12 @@ def fresh_content_scraper(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, 
 
 
 # ML scraper (modified version of trending content scraper)
-def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
+def ml_scraper(USER_ID=None, PASSCODE=None, tag_hashes=None, bucket_ids=None, pages=None, mode=None, targeting=None):
+    if targeting == "bucket":
+        tag_hashes = sharechat_helper.get_tag_hashes(USER_ID, PASSCODE, bucket_ids)
+        delay = uniform(10,15)
+    elif targeting == "tag":
+        delay = uniform(30,35)
     if mode == "archive":
         print("Scraping in archive mode")
         start_time = time.time()
@@ -283,7 +302,8 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
                                                     USER_ID,
                                                     PASSCODE,
                                                     tag_hashes,
-                                                    pages)
+                                                    pages,
+                                                    delay)
             if len(sharechat_df) < 1: 
                 raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
             else:
@@ -341,7 +361,8 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
                                                 USER_ID,
                                                 PASSCODE,
                                                 tag_hashes,
-                                                pages)
+                                                pages,
+                                                delay)
         if len(sharechat_df) < 1: 
             raise ValueError("get_data() returned empty dataframe. No posts were scraped.")
         else:
@@ -371,7 +392,7 @@ def ml_scraper(USER_ID, PASSCODE, tag_hashes, pages, mode):
         return sharechat_df
     
 # Virality metrics scraper
-def virality_scraper(USER_ID, PASSCODE, data_path):
+def virality_scraper(USER_ID=None, PASSCODE=None, data_path=None):
     print("Loading data ...")
     start_time = time.time()
     # Load data

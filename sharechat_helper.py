@@ -36,7 +36,7 @@ import sys
 # For targeted tag scraper
 
 # Generates params for API requests
-def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, unix_timestamp=None, post_key=None):
+def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, unix_timestamp=None, post_key=None, bucket_id=None):
     requests_dict = {
     "tag_data_request": { # gets tag info 
         "body": {
@@ -110,9 +110,39 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
         "api_url" : "https://restapi1.sharechat.com/requestType45",
         "headers": {"content-type": "application/json", 
                     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                   }},
+    "bucket_data_request": { # gets list of tag hashes in a bucket
+        "body": {
+            "bn":"broker3",
+            "userId": USER_ID,
+            "passCode": PASSCODE, 
+            "client":"web",
+            "message":{
+                "key": "{}".format(bucket_id), 
+                "bucketId": bucket_id, 
+                "t": 3
+                        }},
+        "api_url" : "https://apis.sharechat.com/requestType66",
+        "headers": {"content-type": "application/json", 
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
                    }}        
         }
     return requests_dict
+
+
+# Gets tag hashes from content  bucket
+def get_tag_hashes(USER_ID, PASSCODE, bucket_ids):
+    tag_hashes = []
+    for i in bucket_ids:
+        try:
+            requests_dict = generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, unix_timestamp=None, post_key=None, bucket_id=i)
+            bucket_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="bucket_data_request")
+            for tag in bucket_data_response_dict["payload"]["tags"]:
+                tag_hashes.append(tag["tagHash"])  
+        except Exception as e:
+            print(logging.traceback.format_exc())
+    return tag_hashes
+
 
 def get_response_dict(requests_dict, request_type):
     url = requests_dict[request_type]["api_url"]
@@ -125,6 +155,8 @@ def get_response_dict(requests_dict, request_type):
     response = requests.post(url=url, json=body, headers=headers)
     response_dict = json.loads(response.text)
     return response_dict
+
+
 
 # Gets tag info
 def get_tag_data(payload_dict):
@@ -228,7 +260,7 @@ def get_next_timestamp(payload_dict):
     return next_timestamp
 
 # Gets trending tag data
-def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
+def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
     # Create empty dataframe to collect scraped data
     df = pd.DataFrame(columns = ["media_link", "timestamp", "language", 
                                    "media_type", "tag_name", "tag_translation", 
@@ -262,7 +294,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                     post_data = get_post_data(post_data_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
                     next_offset_hash = get_next_offset_hash(post_data_response_dict)
                     df = df.append(post_data, sort = True)
-                    time.sleep(uniform(30,35)) # random time delay between requests
+                    time.sleep(delay) # random time delay between requests
                 except Exception as e:
                     print(logging.traceback.format_exc())      
             
@@ -273,7 +305,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
                     type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
                     post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
                     df = df.append(post_data, sort = True)
-                    time.sleep(uniform(30,35))
+                    time.sleep(delay)
                 except Exception as e:
                     print(logging.traceback.format_exc())
         else:
@@ -287,7 +319,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages):
 
         
 # Gets fresh tag data
-def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
+def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, delay):
     # Create empty dataframe to collect scraped data
     print("Getting fresh data ...")
     df = pd.DataFrame(columns = ["media_link", "timestamp", "language", 
@@ -318,7 +350,7 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp):
                     fresh_posts_data = get_post_data(fresh_posts_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
                     request_timestamp = get_next_timestamp(fresh_posts_response_dict)
                     df = df.append(fresh_posts_data, sort = True)
-                    time.sleep(uniform(30,35))
+                    time.sleep(delay)
                 except Exception:
                     pass           
         else:
