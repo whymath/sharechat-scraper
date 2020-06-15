@@ -25,6 +25,9 @@ working_files/
 venv/
 ENV/
 
+# Debugging
+df_to_mongo.py
+
 # Flask stuff:
 instance/
 .webassets-cache
