@@ -13,3 +13,5 @@ ipython==7.15.0
 Pillow==7.1.2
 python-dotenv==0.13.0
 python_dateutil==2.8.1
+gunicorn==20.0.4
+Flask==1.1.1
