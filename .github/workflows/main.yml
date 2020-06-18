@@ -1,0 +1,22 @@
+name: PROD (scraper)
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Publish to Docker
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          username: tattletech
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          name: tattletech/sharechat-scraper
+          tag: stable
