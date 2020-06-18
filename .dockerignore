@@ -1,0 +1,44 @@
+# Editors
+.vscode/
+.log
+
+# Mac/OSX
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+**/__pycache__
+
+# Everything in working_files folder
+working_files/
+
+# Temporary data files saved locally by scrapers
+*.pkl
+*.csv
+*.html
+
+# virtualenv
+.venv/
+venv/
+ENV/
+
+# Debugging
+df_to_mongo.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# dotenv
+.env
+
+# Distribution / packaging
+.Python
+lib/
+include/
+bin/
+
+share/
