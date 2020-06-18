@@ -19,4 +19,4 @@ jobs:
           username: tattletech
           password: ${{ secrets.DOCKER_PASSWORD }}
           name: tattletech/sharechat-scraper
-          tag: stable
+          tags: "stable"
