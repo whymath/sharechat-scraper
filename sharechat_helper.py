@@ -76,7 +76,7 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
             "message":{
                 "tagHash": "{}".format(tag_hash), 
                 "feed": True,
-                "allowOffline": True,
+#"allowOffline": True,
                 "type": "{}".format(content_type)}},
         "api_url": "https://restapi1.sharechat.com/requestType88",
         "headers": {"content-type": "application/json", 
@@ -269,7 +269,8 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
                                  "reposts", "post_permalink", "caption", "text", "views", "profile_page"])
     content_types = ["image", "video", "text"] # add others if required
     for tag_hash in tag_hashes:
-        next_offset_hash = None
+        #next_offset_hash = None
+        next_offset_hash = "kdn0"
         tagDataScraped = False
         try:
             # Send API request to scrape tag info
@@ -301,7 +302,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
             # Scrape additional content by content type         
             for c in content_types:
                 try:
-                    requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(i)
+                    requests_dict["type_specific_request"]["body"]["message"]["type"] = "{}".format(c)
                     type_specific_response_dict = get_response_dict(requests_dict=requests_dict, request_type="type_specific_request")
                     post_data = get_post_data(type_specific_response_dict, tag_name, tag_translation, tag_genre, bucket_name, bucket_id)
                     df = df.append(post_data, sort = True)
