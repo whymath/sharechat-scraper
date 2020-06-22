@@ -12,7 +12,7 @@ scraper_params = {
     "pages": 5,
     "unix_timestamp": "",
     "data_path": "",
-    "mode": "local",
+    "mode": "archive",
     "targeting": "bucket",
     "is_cron_job": True
 }
