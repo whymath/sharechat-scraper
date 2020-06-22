@@ -6,7 +6,6 @@ RUN apt-get install -y rsyslog
 RUN apt-get install -y vim
 RUN apt-get install -y cron
 RUN apt-get install -y ffmpeg
-RUN touch /app/syscronscrape.log
 RUN service rsyslog start
 RUN service cron start
 
