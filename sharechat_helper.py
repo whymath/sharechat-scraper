@@ -312,7 +312,6 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
         else:
             pass
     df.drop_duplicates(inplace = True)
-    print(len(df))
     df["timestamp"] = df["timestamp"].apply(lambda x: datetime.utcfromtimestamp(int(x)))
     df["filename"] = [str(uuid.uuid4()) for x in range(len(df))]  
     df["scraped_date"] = datetime.utcnow()
@@ -383,7 +382,7 @@ def get_thumbnails_from_s3(df):
     aws, bucket, s3 = s3_mongo_helper.initialize_s3()
     temp_dir = tempfile.mkdtemp(dir=os.getcwd())
     for link in df["s3_url"]:
-        if link == link: 
+        if link is not None: 
             if link.split(".")[-1] == "mp4":
                 video_input_path = link
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
@@ -410,7 +409,7 @@ def get_thumbnails_from_sharechat(df):
     thumbnail = []
     temp_dir = tempfile.mkdtemp(dir=os.getcwd())
     for link in df["media_link"]:
-        if link == link: 
+        if link is not None and "sharechat" in link: 
             if link.split(".")[-1] == "mp4":
                 video_input_path = link
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
@@ -426,6 +425,7 @@ def get_thumbnails_from_sharechat(df):
     #print(df["thumbnail"])
     pd.set_option('display.max_colwidth', -1)
     df_html = HTML(df.to_html(index = False, escape=False ,formatters=dict(thumbnail=path_to_image_html), render_links = True))
+    shutil.rmtree(temp_dir)
     return df, df_html
 
 
@@ -513,6 +513,7 @@ def ml_sharechat_s3_upload(df, aws, bucket, s3):
     df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
     df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
     df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
+    df.loc[df["media_type"] == "link", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
     return df # return df with s3 urls added
 
 
@@ -525,7 +526,7 @@ def sharechat_s3_upload(df, aws, bucket, s3):
                 # Get media
             temp = wget.download(row["media_link"])
                 # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type="image/jpeg")
             os.remove(temp)
         elif (row["media_type"] == "video"):
                 # Create S3 file name
@@ -533,7 +534,7 @@ def sharechat_s3_upload(df, aws, bucket, s3):
                 # Get media
             temp = wget.download(row["media_link"])
                 # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type="video/mp4")
             os.remove(temp)
         else: # for text posts and media links
                 # Create S3 file name
@@ -542,13 +543,14 @@ def sharechat_s3_upload(df, aws, bucket, s3):
             with open("temp.txt", "w+") as f:
                 f.write(row["text"])
                 # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
+            s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type="application/json")
             os.remove("temp.txt")
     # Add S3 urls with correct extensions
     df.reset_index(inplace = True)
     df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
     df.loc[df["media_type"] == "video", "s3_url"] = aws+bucket+"/"+df["filename"]+".mp4"
     df.loc[df["media_type"] == "text", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
+    df.loc[df["media_type"] == "link", "s3_url"] = aws+bucket+"/"+df["filename"]+".txt"
     return df # return df with s3 urls added
 
 def ml_initialize_mongo():
