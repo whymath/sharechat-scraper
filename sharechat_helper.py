@@ -32,6 +32,7 @@ import boto3
 import pymongo
 from pymongo import MongoClient
 import sys
+import codecs
 
 # For targeted tag scraper
 
@@ -540,8 +541,10 @@ def sharechat_s3_upload(df, aws, bucket, s3):
                 # Create S3 file name
             filename = row["filename"]+".txt"
                 # Create text file
-            with open("temp.txt", "w+") as f:
+            with codecs.getwriter("utf8")(open("temp.txt", "wb")) as f:
                 f.write(row["text"])
+            # with open("temp.txt", "w+") as f:
+            #     f.write(row["text"])
                 # Upload media to S3
             s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type="application/json")
             os.remove("temp.txt")
