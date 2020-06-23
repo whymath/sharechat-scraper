@@ -279,7 +279,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
             tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
             tagDataScraped = True
         except Exception as e:
-            print("Could not scrape data from '{}'".format(tag_name))
+            print("Could not scrape data from '{}'".format(tag_hash))
             print("Continuing ...")
             pass 
         # Send API requests to scrape tag media & metadata 
@@ -337,7 +337,7 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, delay):
             tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
             tagDataScraped = True
         except Exception as e:
-            print("Could not scrape data from '{}'".format(tag_name))
+            print("Could not scrape data from '{}'".format(tag_hash))
             print("Continuing ...")
             pass 
         # Send API requests to scrape tag media & metadata 
