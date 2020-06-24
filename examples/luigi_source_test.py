@@ -1,11 +1,15 @@
 import luigi 
 import pandas as pd
 
+def test():
+    print("test")
+
 
 class SourceData(luigi.Task):
     filename = luigi.Parameter() # replace with date
 
     def output(self):
+        print("hello")
         return luigi.LocalTarget("urls.csv") 
 
     def run(self):
@@ -14,7 +18,7 @@ class SourceData(luigi.Task):
         # filter & load data to df using date parameter
         urls = df["s3_url"] 
         with self.output().open('w') as f:
-            for url in url:
+            for url in urls:
                 f.write(url)
 
 class ExtractText(luigi.Task):
@@ -24,9 +28,11 @@ class ExtractText(luigi.Task):
         return SourceData(filename=self.filename)
 
     def output(self):
+        print('hello2')
         return luigi.LocalTarget("see.txt")
 
     def run(self):
         # os.system("text_extraction_script.py")
+        print("1")
         with self.output().open('w') as f:
             f.write("let's see if this works")
