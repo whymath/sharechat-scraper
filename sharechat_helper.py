@@ -506,7 +506,8 @@ def ml_sharechat_s3_upload(df, aws, bucket, s3):
                     # Upload media to S3
                 ml_upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
                 os.remove("temp.txt")
-        except:
+        except Exception as e:
+            print(logging.traceback.format_exc())
             pass
     # Add S3 urls with correct extensions
     df.reset_index(inplace = True)
@@ -519,31 +520,35 @@ def ml_sharechat_s3_upload(df, aws, bucket, s3):
 def sharechat_s3_upload(df, aws, bucket, s3):
     #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
     for index, row in df.iterrows():
-        if (row["media_type"] == "image"):
-                # Create S3 file name 
-            filename = row["filename"]+".jpg"
-                # Get media
-            temp = wget.download(row["media_link"])
-                # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
-            os.remove(temp)
-        elif (row["media_type"] == "video"):
-                # Create S3 file name
-            filename = row["filename"]+".mp4"
-                # Get media
-            temp = wget.download(row["media_link"])
-                # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
-            os.remove(temp)
-        else: # for text posts and media links
-                # Create S3 file name
-            filename = row["filename"]+".txt"
-                # Create text file
-            with open("temp.txt", "w+") as f:
-                f.write(row["text"])
-                # Upload media to S3
-            s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
-            os.remove("temp.txt")
+        try:
+            if (row["media_type"] == "image"):
+                    # Create S3 file name 
+                filename = row["filename"]+".jpg"
+                    # Get media
+                temp = wget.download(row["media_link"])
+                    # Upload media to S3
+                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+                os.remove(temp)
+            elif (row["media_type"] == "video"):
+                    # Create S3 file name
+                filename = row["filename"]+".mp4"
+                    # Get media
+                temp = wget.download(row["media_link"])
+                    # Upload media to S3
+                s3_mongo_helper.upload_to_s3(s3=s3, file=temp, filename=filename, bucket=bucket, content_type=row["media_type"])
+                os.remove(temp)
+            else: # for text posts and media links
+                    # Create S3 file name
+                filename = row["filename"]+".txt"
+                    # Create text file
+                with open("temp.txt", "w+") as f:
+                    f.write(row["text"])
+                    # Upload media to S3
+                s3_mongo_helper.upload_to_s3(s3=s3, file="temp.txt", filename=filename, bucket=bucket, content_type=row["media_type"])
+                os.remove("temp.txt")
+        except Exception as e:
+            print(logging.traceback.format_exc())
+            pass
     # Add S3 urls with correct extensions
     df.reset_index(inplace = True)
     df.loc[df["media_type"] == "image", "s3_url"] = aws+bucket+"/"+df["filename"]+".jpg"
