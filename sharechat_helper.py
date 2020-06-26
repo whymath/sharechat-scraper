@@ -519,7 +519,6 @@ def ml_sharechat_s3_upload(df, aws, bucket, s3):
 
 
 def sharechat_s3_upload(df, aws, bucket, s3):
-    #aws, bucket, s3 = s3_mongo_helper.initialize_s3()
     for index, row in df.iterrows():
         if (row["media_type"] == "image"):
                 # Create S3 file name 
