@@ -26,7 +26,8 @@ class StoreUrl(luigi.Task):
 
     def output(self):
         cli = MongoClient("mongodb+srv://dev_sharechat:epJbUkQu72WHmpLN@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE")
-        return mongodb.MongoTarget(mongo_client=cli, index="dev_sharechat", collection="luigi_test")
+        return mongodb.MongoCellTarget(mongo_client=cli, index="dev_sharechat", collection="luigi_test",
+        document_id="5ef3409d519ad0a17386e7d3", path="test")
 
     def run(self):
         cli = MongoClient("mongodb+srv://dev_sharechat:epJbUkQu72WHmpLN@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE")

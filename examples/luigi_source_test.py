@@ -1,38 +1,57 @@
+from dotenv import load_dotenv
+load_dotenv()
+import os
+import pymongo
+from pymongo import MongoClient
 import luigi 
+from luigi import contrib
+from luigi.contrib import mongodb
 import pandas as pd
+import datetime
+from datetime import datetime
+from datetime import timedelta
 
 def test():
     print("test")
 
 
 class SourceData(luigi.Task):
-    filename = luigi.Parameter() # replace with date
+    # filename = luigi.Parameter() 
+
+    # def output(self):
+    #     print("hello")
+    #     return luigi.LocalTarget("urls.txt") 
+
+    # def run(self):
+    #     df = pd.read_csv(self.filename) 
+    #     urls = df["s3_url"] 
+    #     with self.output().open('w') as f:
+    #         for url in urls:
+    #             f.write(url)
+    cli = MongoClient("mongodb+srv://"+os.environ.get("SHARECHAT_DB_USERNAME")+":"+os.environ.get("SHARECHAT_DB_PASSWORD")+"@tattle-data-fkpmg.mongodb.net/test?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE")
+    db = cli[os.environ.get("SHARECHAT_DB_NAME")]
+    collection = db[os.environ.get("SHARECHAT_DB_COLLECTION")]
 
     def output(self):
-        print("hello")
-        return luigi.LocalTarget("urls.csv") 
-
+        return luigi.LocalTarget('urls.txt')
+        
     def run(self):
-        df = pd.read_csv(self.filename) 
-        # replace with coll = os.system("mongo_access_script.py")
-        # filter & load data to df using date parameter
-        urls = df["s3_url"] 
-        with self.output().open('w') as f:
-            for url in urls:
-                f.write(url)
+        end = datetime.utcnow()
+        start = end - timedelta(days=1)
+        with self.output().open("w") as f:
+            for i in self.collection.find({"scraped_date": {'$gte':start,'$lt':end}}):
+                if i["media_type"] == "image":
+                    f.write(i["s3_url"]+"\n")
 
 class ExtractText(luigi.Task):
-    filename = luigi.Parameter()
-
-    def requires(self):
-        return SourceData(filename=self.filename)
 
     def output(self):
-        print('hello2')
-        return luigi.LocalTarget("see.txt")
+        return luigi.LocalTarget("extracted_text.txt")
 
     def run(self):
         # os.system("text_extraction_script.py")
-        print("1")
         with self.output().open('w') as f:
             f.write("let's see if this works")
+
+    def requires(self):
+    return SourceData()
