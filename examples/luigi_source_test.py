@@ -11,10 +11,6 @@ import datetime
 from datetime import datetime
 from datetime import timedelta
 
-def test():
-    print("test")
-
-
 class SourceData(luigi.Task):
     # filename = luigi.Parameter() 
 
@@ -43,15 +39,3 @@ class SourceData(luigi.Task):
                 if i["media_type"] == "image":
                     f.write(i["s3_url"]+"\n")
 
-class ExtractText(luigi.Task):
-
-    def output(self):
-        return luigi.LocalTarget("extracted_text.txt")
-
-    def run(self):
-        # os.system("text_extraction_script.py")
-        with self.output().open('w') as f:
-            f.write("let's see if this works")
-
-    def requires(self):
-    return SourceData()
