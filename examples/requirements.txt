@@ -1,0 +1,8 @@
+luigi==3.0.0
+pandas==0.24.2
+pymongo==3.10.1
+requests==2.23.0
+protobuf==3.12.2
+python-dotenv==0.13.0
+google-cloud-vision==1.0.0
+dnspython==1.16.0
