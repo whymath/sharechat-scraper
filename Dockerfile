@@ -2,6 +2,13 @@ FROM python:3.6
 
 RUN apt-get update
 
+RUN apt-get install -y rsyslog
+RUN apt-get install -y vim
+RUN apt-get install -y cron
+RUN apt-get install -y ffmpeg
+RUN service rsyslog start
+RUN service cron start
+
 COPY . /app
 WORKDIR /app
 ARG flask_app=server.py
