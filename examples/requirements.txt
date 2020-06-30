@@ -6,3 +6,4 @@ protobuf==3.12.2
 python-dotenv==0.13.0
 google-cloud-vision==1.0.0
 dnspython==1.16.0
+googletrans==3.0.0
