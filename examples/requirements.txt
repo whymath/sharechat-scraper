@@ -1,6 +1,6 @@
 luigi==3.0.0
 pandas==0.24.2
-pymongo==3.10.1
+pymongo==3.2
 requests==2.23.0
 protobuf==3.12.2
 python-dotenv==0.13.0
