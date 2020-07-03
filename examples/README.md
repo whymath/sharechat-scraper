@@ -17,14 +17,12 @@ export DB_PASSWORD = <>
 export DB_COLLECTION = <>
 export GOOGLE_APPLICATION_CREDENTIALS = <>
 ```
-4. Activate the task visualizer 
-Command line:
+4. Activate the task visualizer. Command line:
 ```
 luigid --background --pidfile ./luigid.pid --logdir luigi --state-path luigi/state --address 0.0.0.0 --port 8082
 ```
 5. Open localhost:8082 in a browser window to monitor the tasks
-6. Trigger the pipeline 
-Command line:
+6. Trigger the pipeline. Command line:
 ```
 python3 -m luigi --module keyword_filter_pipeline StoreLabel --db <mongo_database_name> --collection <collection_name> --field "keyword_filter"
 ``` 
