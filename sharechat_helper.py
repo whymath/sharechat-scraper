@@ -40,24 +40,13 @@ import codecs
 def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, unix_timestamp=None, post_key=None, bucket_id=None):
     requests_dict = {
     "tag_data_request": { # gets tag info 
-        "body": {
-            "bn":"broker3",
-            "userId": USER_ID,
-            "passCode": PASSCODE, 
-            "client":"web",
-            "message":{
-                "key": "{}".format(tag_hash), 
-                "th": "{}".format(tag_hash), 
-                "t": 2, 
-                "allowOffline": True
-                        }},
-        "api_url" : "https://restapi1.sharechat.com/requestType66",
+        "api_url" : "https://apis.sharechat.com/explore-service/v1.0.0/tag?tagHash=",
         "headers": {"content-type": "application/json", 
                     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
                     "x-sharechat-authorized-userid": USER_ID,
                     "x-sharechat-secret": PASSCODE,
                     "x-sharechat-userid": USER_ID
-                   }}, 
+                   }},  
     "trending_posts_request": { # gets media & metadata from trending section within tag 
         "body": {
             "bn":"broker3",
@@ -165,34 +154,23 @@ def get_tag_hashes(USER_ID, PASSCODE, bucket_ids):
 
 def get_response_dict(requests_dict, request_type):
     url = requests_dict[request_type]["api_url"]
-    body = requests_dict[request_type]["body"]
     headers = requests_dict[request_type]["headers"]
-    # if request_type == "trending_posts_request" and next_offset_hash is not None:
-    #     body["message"]["nextOffsetHash"] = "{}".format(next_offset_hash)
-    # else: 
-    #     pass 
-    response = requests.post(url=url, json=body, headers=headers)
-    response_dict = json.loads(response.text)
+    if request_type == "tag_data_request":
+        response = requests.get(url=url, headers=headers)
+        response_dict = json.loads(response.text)
+    else:
+        body = requests_dict[request_type]["body"]
+        response = requests.post(url=url, json=body, headers=headers)
+        response_dict = json.loads(response.text)
     return response_dict
 
-
-
-# Gets tag info
 def get_tag_data(payload_dict):
-    tag_name = payload_dict["payload"]["n"]
-    tag_translation = payload_dict["payload"]["englishMeaning"]
-    tag_genre = payload_dict["payload"]["tagGenre"]
-    bucket_name = payload_dict["payload"]["bn"]
-    bucket_id = payload_dict["payload"]["bi"]
+    tag_name = payload_dict["tagName"]
+    tag_translation = payload_dict["englishMeaning"]
+    tag_genre = payload_dict["tagGenre"]
+    bucket_name = payload_dict["bucketName"]
+    bucket_id = payload_dict["bucketId"]
     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
-
-# def get_tag_data(payload_dict):
-#     tag_name = payload_dict["tagName"]
-#     tag_translation = payload_dict["englishMeaning"]
-#     tag_genre = payload_dict["tagGenre"]
-#     bucket_name = payload_dict["bucketName"]
-#     bucket_id = payload_dict["bucketId"]
-#     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
 
 # Gets payload metadata that is common across content types
 def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page):
@@ -302,6 +280,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
         try:
             # Send API request to scrape tag info
             requests_dict = generate_requests_dict(USER_ID, PASSCODE, tag_hash=tag_hash, content_type=None, unix_timestamp=None, post_key=None)
+            requests_dict["tag_data_request"]["api_url"] = requests_dict["tag_data_request"]["api_url"]+tag_hash+"&groupTag=true"
             tag_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="tag_data_request")
             tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
             tagDataScraped = True
@@ -311,7 +290,6 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
             pass 
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
-            print("yes!")
             # Scrape trending pages 
             for i in range(pages): 
                 try:
@@ -361,6 +339,7 @@ def get_fresh_data(USER_ID, PASSCODE, tag_hashes, pages, unix_timestamp, delay):
         try:
             # Send API request to scrape tag info
             requests_dict = generate_requests_dict(USER_ID, PASSCODE, tag_hash=tag_hash, content_type=None, unix_timestamp=unix_timestamp, post_key=None)
+            requests_dict["tag_data_request"]["api_url"] = requests_dict["tag_data_request"]["api_url"]+tag_hash+"&groupTag=true"
             tag_data_response_dict = get_response_dict(requests_dict=requests_dict, request_type="tag_data_request")
             tag_name, tag_translation, tag_genre, bucket_name, bucket_id = get_tag_data(tag_data_response_dict)
             tagDataScraped = True
@@ -415,7 +394,7 @@ def get_thumbnails_from_s3(df):
                 video_input_path = link
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
                 filename = link.split("/")[-1].split(".")[0]+".jpg"
-                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
+                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path], stderr=subprocess.DEVNULL,stdout=subprocess.DEVNULL)
                 s3_mongo_helper.upload_to_s3(s3=s3, file=img_output_path, filename=filename, bucket=bucket, content_type="image/jpeg")
                 thumbnail.append(aws+bucket+"/"+filename)
             elif link.split(".")[-1] == "txt":
@@ -441,7 +420,7 @@ def get_thumbnails_from_sharechat(df):
             if link.split(".")[-1] == "mp4":
                 video_input_path = link
                 img_output_path = temp_dir.split("/")[-1]+"/"+link.split("/")[-1].split(".")[0]+".jpg"
-                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path])
+                subprocess.call(['ffmpeg', '-i', video_input_path, '-ss', '00:00:00.000', '-vframes', '1', img_output_path], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
                 thumbnail.append(img_output_path)
             elif link.split(".")[-1] == "txt":
                 thumbnail.append(None)
