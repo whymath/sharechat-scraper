@@ -53,7 +53,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                         }},
         "api_url" : "https://restapi1.sharechat.com/requestType66",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                    }}, 
     "trending_posts_request": { # gets media & metadata from trending section within tag 
         "body": {
@@ -66,7 +69,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                 "allowOffline": True}},
         "api_url": "https://restapi1.sharechat.com/getViralPostsSeo",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                        }},
     "type_specific_request": {# gets media & metadata by content type within tag (image/video/text)
         "body": {
@@ -81,7 +87,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                 "type": "{}".format(content_type)}},
         "api_url": "https://restapi1.sharechat.com/requestType88",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                        }},
     "fresh_posts_request": {# gets media & metadata by timestamp ("fresh" content)
         "body": {
@@ -95,7 +104,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                 "allowOffline": True}},
         "api_url": "https://restapi1.sharechat.com/requestType25",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                        }},
     "virality_metrics_request": { # gets current virality metrics for a post
         "body": {
@@ -110,7 +122,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                         }},
         "api_url" : "https://restapi1.sharechat.com/requestType45",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                    }},
     "bucket_data_request": { # gets list of tag hashes in a bucket
         "body": {
@@ -125,7 +140,10 @@ def generate_requests_dict(USER_ID, PASSCODE, tag_hash=None, content_type=None, 
                         }},
         "api_url" : "https://apis.sharechat.com/requestType66",
         "headers": {"content-type": "application/json", 
-                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36",
+                    "x-sharechat-authorized-userid": USER_ID,
+                    "x-sharechat-secret": PASSCODE,
+                    "x-sharechat-userid": USER_ID
                    }}        
         }
     return requests_dict
@@ -167,6 +185,14 @@ def get_tag_data(payload_dict):
     bucket_name = payload_dict["payload"]["bn"]
     bucket_id = payload_dict["payload"]["bi"]
     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
+
+# def get_tag_data(payload_dict):
+#     tag_name = payload_dict["tagName"]
+#     tag_translation = payload_dict["englishMeaning"]
+#     tag_genre = payload_dict["tagGenre"]
+#     bucket_name = payload_dict["bucketName"]
+#     bucket_id = payload_dict["bucketId"]
+#     return tag_name, tag_translation, tag_genre, bucket_name, bucket_id
 
 # Gets payload metadata that is common across content types
 def get_common_metadata(payload_key, timestamp, language, media_type, post_permalink, caption, external_shares, likes, comments, reposts, views, profile_page):
@@ -285,6 +311,7 @@ def get_trending_data(USER_ID, PASSCODE, tag_hashes, pages, delay):
             pass 
         # Send API requests to scrape tag media & metadata 
         if tagDataScraped:
+            print("yes!")
             # Scrape trending pages 
             for i in range(pages): 
                 try:
