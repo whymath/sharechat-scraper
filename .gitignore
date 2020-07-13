@@ -8,6 +8,9 @@
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# PyCharm
+.idea/
+
 # Environments
 .env
 **/__pycache__

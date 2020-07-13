@@ -9,14 +9,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      
+      - name: Deploy to k8s
+        uses: appleboy/ssh-action@master
         with:
-          ref: master
-
-      - name: Publish to Docker
-        uses: elgohr/Publish-Docker-Github-Action@master
-        with:
-          username: tattletech
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          name: tattletech/sharechat-scraper
-          tags: "dummy"
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            ./autodeploy_scs.sh stable > ~/deploy.log 2>&1
