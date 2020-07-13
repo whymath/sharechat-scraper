@@ -17,4 +17,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           script: |
-            ./autodeploy_scs.sh stable > ~/deploy.log 2>&1
+            ./autodeploy_scs.sh dummy >> ~/deploy.log 2>&1
+            sleep 2m
+            ./autodeploy_scs.sh stable >> ~/deploy.log 2>&1
